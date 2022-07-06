@@ -19,12 +19,17 @@ async def create_user(user_info: UserCreate,
     if not await authorization.read_authorization(name=user_info.authorization, db=db):
         raise HTTPException(status_code=404, detail='No such authorization.')
 
-    # If authorization exists, create user.
-    result = await user.create_user(github_id=user_info.github_id,
-                                    email=user_info.email,
-                                    name=user_info.name,
-                                    authorization_name=user_info.authorization,
-                                    db=db)
+    try:
+        # TODO: Handle error.
+        # If authorization exists, create user.
+        result = await user.create_user(github_id=user_info.github_id,
+                                        email=user_info.email,
+                                        name=user_info.name,
+                                        authorization_name=user_info.authorization,
+                                        refresh_token=None,  # TODO: Include refresh token.
+                                        db=db)
+    except sqlalchemy.exc.IntegrityError as e:
+        raise HTTPException(detail=e.args[0].split('\"')[1], status_code=400)
 
     return {
         'success': True,
