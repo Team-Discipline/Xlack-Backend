@@ -1,20 +1,18 @@
-import pymysql
 import sqlalchemy
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pymysql import IntegrityError
 from sqlalchemy.orm import Session
 from starlette.responses import JSONResponse
 
+from ..model.crud import user, authorization
 from ..model.crud.authorization import read_authorization
 from ..model.crud.user import read_users, read_user, update_user, delete_user
-from ..model.crud import user, authorization
 from ..model.database import get_db
-from ..model.schemas import UserCreate
+from ..model.schemas import UserCreate, UserInformation
 
-router = APIRouter(tags=['user'])
+router = APIRouter(prefix='/user', tags=['user'])
 
 
-@router.post('/user')
+@router.post('/')
 async def create_user(user_info: UserCreate,
                       db: Session = Depends(get_db)):
     # Check authorization first!
@@ -35,6 +33,16 @@ async def create_user(user_info: UserCreate,
     }
 
 
-@router.get('/user')
-async def read_user_info(db: Session = Depends(get_db)):
-    return ''
+# TODO: Should adjust auth middleware.
+@router.delete('/')
+async def remove_user(user_id: str, db: Session = Depends(get_db)):
+    rows = await delete_user(user_id=user_id, db=db)
+
+    if not rows:
+        raise HTTPException(detail='Not deleted.')
+
+    return {
+        'success': True,
+        'message': 'Successfully deleted.',
+        'count': rows
+    }
