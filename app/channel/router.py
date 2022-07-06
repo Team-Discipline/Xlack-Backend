@@ -1,8 +1,8 @@
-from fastapi import APIRouter
+# from fastapi import APIRouter
 from pydantic import BaseModel
-from fastapi import APIRouter, File, UploadFile, HTTPException
+from fastapi import APIRouter, File, HTTPException
 from datetime import datetime
-from typing import Union
+# from typing import Union
 router = APIRouter(prefix='/channel', tags=['channel'])
 
 """Channels"""
@@ -31,7 +31,7 @@ async def get_channel_datetime(date: datetime):
     return date
 
 @router.delete('/create_channel/{get_channel_info}')
-async def delete_channel_info(member_name:str, member_profile: bytes = File()):
+async def delete_channel_info(member_name: str):
     member_name = get_channel_info.get(member_name)
     if member_name not in get_channel_info():
         raise HTTPException(status_code=404, datail = "404 not found")
@@ -39,7 +39,7 @@ async def delete_channel_info(member_name:str, member_profile: bytes = File()):
     get_channel_info.commit()
     return{"deleted": True}
 
-"""Chats"""
+# chats
 
 class Chat(BaseModel):
     chatter: str
