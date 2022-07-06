@@ -22,6 +22,7 @@ async def create_user(db: Session,
     :param email: email address.
     :param name: full name.
     :param authorization_name: name which is in `Authorization` in database.
+    :param refresh_token: Refresh token.
     :param db:
     :return:
     """
