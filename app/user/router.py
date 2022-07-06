@@ -35,7 +35,72 @@ async def create_user(user_info: UserCreate,
     return {
         'success': True,
         'message': 'Successfully created user.',
+        'user': await read_user(db=db, email=user_info.email)
+    }
+
+
+# TODO: Should adjust auth middleware.
+@router.get('/')
+async def read_user_info(user_id: str | None = None,
+                         email: str | None = None,
+                         db: Session = Depends(get_db)):
+    result = await read_user(user_id=user_id, email=email, db=db)
+
+    return {
+        'success': True,
         'user': result
+    } if result is not None else JSONResponse(content={
+        'success': False,
+        'message': 'No such user.'
+    }, status_code=404)
+
+
+# TODO: Should adjust auth middleware.
+@router.get('/all')
+async def get_all_users(db: Session = Depends(get_db)):
+    users = await read_users(db)
+    return {
+        'success': True,
+        'users': users
+    } if len(users) != 0 else JSONResponse(content={
+        'success': False,
+        'message': 'No users.'
+    }, status_code=404)
+
+
+# TODO: Should adjust auth middleware.
+@router.patch('/')
+async def update_user_info(user_info: UserInformation,
+                           user_id: str | None = Query(default=None, description='One of way to select user.'),
+                           db: Session = Depends(get_db)):
+    """
+    When you want to update user's information.
+    Put user information you want to update on **request body**.
+    Use `user_id`.
+
+    :param user_info:
+    :param user_id:
+    :param db:
+    :return:
+    """
+
+    # Check authorization first.
+    if not await read_authorization(user_info.authorization, db):
+        raise HTTPException(status_code=404, detail='No such authorization.')
+
+    # If authorization exists, Fix user information.
+    rows = await update_user(db=db, user_id=user_id,
+                             email=user_info.email,
+                             name=user_info.name,
+                             authorization_name=user_info.authorization)
+
+    if not rows:
+        raise HTTPException(detail='Not updated.')
+
+    return {
+        'success': True,
+        'message': 'Successfully updated.',
+        'user': await read_user(db=db, user_id=user_id)
     }
 
 
