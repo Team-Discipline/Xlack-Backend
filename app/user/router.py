@@ -31,6 +31,7 @@ async def create_user(user_info: UserCreate,
     except sqlalchemy.exc.IntegrityError as e:
         raise HTTPException(detail=e.args[0].split('\"')[1], status_code=400)
 
+    # TODO: Issue access token and refresh token.
     return {
         'success': True,
         'message': 'Successfully created user.',
