@@ -40,7 +40,6 @@ async def create_user(db: Session,
 
 async def read_user(db: Session,
                     user_id: str | None = None,
-                    github_id: str | None = None,
                     email: str | None = None) -> models.User:
     """
     Return user data using one of parameter below.
