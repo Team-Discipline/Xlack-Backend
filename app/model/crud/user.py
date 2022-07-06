@@ -74,8 +74,8 @@ async def update_user(db: Session,
                       user_id: str,
                       email: str,
                       name: str,
-                      refresh_token: str,
-                      authrization_name: str = 'member') -> models.User:
+                      refresh_token: str | None = None,
+                      authorization_name: str = 'member') -> models.User:
     """
     Identify user only with **user_id**!!!
     Check authorization first!!!
