@@ -1,5 +1,3 @@
-import numbers
-
 from pydantic import BaseModel, validator
 from datetime import datetime
 from .crud.authorization import read_authorizations, read_authorization
