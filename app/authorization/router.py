@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from app.model.crud.authorization import read_authorization, delete_authorization, update_authorization, \
-    create_authorization
+    create_authorization, read_authorizations
 from app.model.database import get_db
 
 router = APIRouter(prefix='/authorization', tags=['authorization'])
@@ -35,6 +35,19 @@ async def get_auth(name: str, db: Session = Depends(get_db)):
     } if auth is not None else JSONResponse(content={
         'success': False,
         'message': 'No such authorization.'
+    }, status_code=404)
+
+
+@router.get('/')
+async def get_all_auth(db: Session = Depends(get_db)):
+    auths = await read_authorizations(db)
+    print(f'auths: {[auth.name for auth in auths]}')
+    return {
+        'success': True,
+        'authorizations': auths
+    } if len(auths) != 0 else JSONResponse(content={
+        'success': False,
+        'message': 'No authorizations.'
     }, status_code=404)
 
 
