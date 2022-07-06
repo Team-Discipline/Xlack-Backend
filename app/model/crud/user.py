@@ -13,7 +13,8 @@ async def create_user(db: Session,
                       github_id: str,
                       email: str,
                       name: str,
-                      authorization_name: str = 'member') -> models.User:
+                      authorization_name: str = 'member',
+                      refresh_token: str | None = None) -> models.User:
     """
     Create user into database.
 
