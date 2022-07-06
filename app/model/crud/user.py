@@ -83,7 +83,8 @@ async def update_user(db: Session,
     :param user_id: Using when identifying user.
     :param email: Field to update.
     :param name: Field to update.
-    :param authrization_name: Field to update. (or `None`)
+    :param refresh_token: Field to update. Not required.
+    :param authrization_name: Field to update. Not required.
     :param db:
     :return:
     """
