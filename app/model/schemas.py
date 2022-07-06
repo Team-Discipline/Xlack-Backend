@@ -1,14 +1,16 @@
-import numbers
-
 from pydantic import BaseModel, validator
 from datetime import datetime
 from .crud.authorization import read_authorizations, read_authorization
 
 
 class UserBase(BaseModel):
-    github_id: str
     email: str
     name: str
+
+
+class UserCreate(UserBase):
+    github_id: str
+    authorization: str
 
     @validator('github_id')
     def check_github_id_is_number(cls, v):
@@ -16,8 +18,12 @@ class UserBase(BaseModel):
         return v
 
 
-class UserCreate(UserBase):
+class UserInformation(UserBase):
     authorization: str
+
+
+class UserUpdate(UserInformation):
+    refresh_token: str
 
 
 class User(UserBase):
@@ -25,6 +31,8 @@ class User(UserBase):
     uuid: str
 
     created_at: datetime
+
+    refresh_token: str
 
     class Config:
         orm_mode = True
@@ -51,11 +59,11 @@ class User(Base):
 """
 
 
-class AuthrizationBase(BaseModel):
+class AuthorizationBase(BaseModel):
     name: str
 
 
-class Authorization(AuthrizationBase):
+class Authorization(AuthorizationBase):
     uuid: str
     created_at: datetime
 

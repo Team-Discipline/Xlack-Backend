@@ -1,14 +1,24 @@
 import json
+import os
+
 from fastapi import APIRouter, Request, Query
 from fastapi.responses import RedirectResponse
+
 from ..utils.github_auth import exchange_code_for_access_token, get_user_data_from_github
-import os
 
 router = APIRouter(prefix='/authentication', tags=['authentication'])
 
 
 @router.get('/github_login')
 async def login_github():
+    """
+    Get redirect response to GitHub OAuth2.
+    Test code for testing backend redirect codes.
+    Frontend team may not use this endpoint.
+
+    :return:
+    """
+
     client_id = os.getenv('GITHUB_CLIENT_ID')
     scope = 'read:user'
     url = f'https://github.com/login/oauth/authorize?client_id={client_id}&scope={scope}'
