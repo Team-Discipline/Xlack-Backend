@@ -30,7 +30,8 @@ async def create_user(db: Session,
                        github_id=github_id,
                        email=email,
                        name=name,
-                       authorization=authorization_name)
+                       authorization=authorization_name,
+                       refresh_token=refresh_token)
     db.add(user)
     db.commit()
     db.refresh(user)
