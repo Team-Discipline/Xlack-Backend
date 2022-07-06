@@ -94,10 +94,16 @@ async def update_user(db: Session,
         .filter(models.User.user_id == user_id) \
         .update({'email': email,
                  'name': name,
-                 'authrization': authrization_name,
-                 'refresh_token': refresh_token})
+                 'authorization': authorization_name})
     db.commit()
-    db.refresh(user)
+
+    if refresh_token is not None:
+        user = db \
+            .query(models.User) \
+            .filter(models.User.user_id == user_id) \
+            .update({'refresh_token': refresh_token})
+        db.commit()
+
     return user
 
 
