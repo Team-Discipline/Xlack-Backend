@@ -1,21 +1,17 @@
-from pydantic import BaseModel, validator
 from datetime import datetime
-from .crud.authorization import read_authorizations, read_authorization
+
+from pydantic import BaseModel
 
 
 class UserBase(BaseModel):
     email: str
     name: str
+    thumbnail_url: str | None
 
 
 class UserCreate(UserBase):
-    github_id: str
+    github_id: int
     authorization: str
-
-    @validator('github_id')
-    def check_github_id_is_number(cls, v):
-        int(v)
-        return v
 
 
 class UserInformation(UserBase):
@@ -23,7 +19,7 @@ class UserInformation(UserBase):
 
 
 class UserUpdate(UserInformation):
-    refresh_token: str
+    refresh_token: str | None
 
 
 class User(UserBase):
