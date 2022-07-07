@@ -1,6 +1,11 @@
 from datetime import datetime, timedelta, timezone
 
+from fastapi import Header, HTTPException
+from jwt import InvalidAlgorithmError, ImmatureSignatureError, InvalidIssuedAtError, \
+    InvalidIssuerError, InvalidAudienceError, ExpiredSignatureError, InvalidSignatureError
 from jwt import encode, decode
+
+from app.errors.jwt_error import AccessTokenExpired, RefreshTokenExpired
 
 
 def issue_token(user_info: dict, delta: timedelta):
@@ -30,3 +35,53 @@ def extract_payload_from_token(token: str):
     payload = decode(jwt=token, key='secret_key', algorithms=['HS256'])
 
     return payload
+
+
+# TODO: Refactoring.
+# Dependency
+def check_auth_using_token(access_token: str = Header(...), refresh_token: str = Header(...)):
+    # Check `refresh_token` first.
+    try:
+        payload = extract_payload_from_token(refresh_token)
+
+        # Check `access_token` second.
+        try:
+            payload = extract_payload_from_token(access_token)
+            return payload
+        # Unacceptable error.
+        except InvalidAlgorithmError as e:
+            raise HTTPException(detail=f'JWT Error (InvalidAlgorithmError/{e.__repr__()})', status_code=401)
+        except ImmatureSignatureError as e:
+            raise HTTPException(detail=f'JWT Error (ImmatureSignatureError/{e.__repr__()})', status_code=401)
+        except InvalidIssuerError as e:
+            raise HTTPException(detail=f'JWT Error (InvalidIssuerError/{e.__repr__()})', status_code=401)
+        except InvalidAudienceError as e:
+            raise HTTPException(detail=f'JWT Error (InvalidAudienceError/{e.__repr__()})', status_code=401)
+        except InvalidSignatureError as e:
+            raise HTTPException(detail=f'JWT Error (InvalidSignatureError/{e.__repr__()})', status_code=401)
+        except InvalidIssuedAtError as e:  # When `iat` is future.
+            raise HTTPException(detail=f'JWT Error (InvalidIssuedAtError/{e.__repr__()})', status_code=401)
+
+        # Acceptable error. Should re-issue token.
+        except ExpiredSignatureError:
+            return AccessTokenExpired()
+
+    # Unacceptable error.
+    except InvalidAlgorithmError as e:
+        raise HTTPException(detail=f'JWT Error (InvalidAlgorithmError/{e.__repr__()})', status_code=401)
+    except ImmatureSignatureError as e:
+        raise HTTPException(detail=f'JWT Error (ImmatureSignatureError/{e.__repr__()})', status_code=401)
+    except InvalidIssuerError as e:
+        raise HTTPException(detail=f'JWT Error (InvalidIssuerError/{e.__repr__()})', status_code=401)
+    except InvalidAudienceError as e:
+        raise HTTPException(detail=f'JWT Error (InvalidAudienceError/{e.__repr__()})', status_code=401)
+    except InvalidSignatureError as e:
+        raise HTTPException(detail=f'JWT Error (InvalidSignatureError/{e.__repr__()})', status_code=401)
+    except InvalidIssuedAtError as e:  # When `iat` is future.
+        raise HTTPException(detail=f'JWT Error (InvalidIssuedAtError/{e.__repr__()})', status_code=401)
+
+    # Acceptable error. Should re-issue token.
+    except ExpiredSignatureError:
+        return RefreshTokenExpired()
+    except AccessTokenExpired:
+        return AccessTokenExpired()
