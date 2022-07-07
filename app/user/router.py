@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 import sqlalchemy
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
@@ -7,7 +9,8 @@ from ..model.crud import user, authorization
 from ..model.crud.authorization import read_authorization
 from ..model.crud.user import read_users, read_user, update_user, delete_user
 from ..model.database import get_db
-from ..model.schemas import UserCreate, UserInformation
+from ..model.schemas import UserCreate, UserUpdate
+from ..utils.jwt import issue_token
 
 router = APIRouter(prefix='/user', tags=['user'])
 
@@ -44,6 +47,15 @@ async def create_user(user_info: UserCreate,
 async def read_user_info(user_id: str | None = None,
                          email: str | None = None,
                          db: Session = Depends(get_db)):
+    """
+    When you want to get user info from database.
+    You must input `user_id` or `email`. One of them!
+
+    :param user_id:
+    :param email:
+    :param db:
+    :return:
+    """
     result = await read_user(user_id=user_id, email=email, db=db)
 
     return {
@@ -70,7 +82,7 @@ async def get_all_users(db: Session = Depends(get_db)):
 
 # TODO: Should adjust auth middleware.
 @router.patch('/')
-async def update_user_info(user_info: UserInformation,
+async def update_user_info(user_info: UserUpdate,
                            user_id: str | None = Query(default=None, description='One of way to select user.'),
                            db: Session = Depends(get_db)):
     """
@@ -92,7 +104,9 @@ async def update_user_info(user_info: UserInformation,
     rows = await update_user(db=db, user_id=user_id,
                              email=user_info.email,
                              name=user_info.name,
-                             authorization_name=user_info.authorization)
+                             thumbnail_url=user_info.thumbnail_url,
+                             authorization_name=user_info.authorization,
+                             refresh_token=user_info.refresh_token)
 
     if not rows:
         raise HTTPException(detail='Not updated.')
@@ -110,7 +124,7 @@ async def remove_user(user_id: str, db: Session = Depends(get_db)):
     rows = await delete_user(user_id=user_id, db=db)
 
     if not rows:
-        raise HTTPException(detail='Not deleted.')
+        raise HTTPException(detail='Not deleted.', status_code=404)
 
     return {
         'success': True,
