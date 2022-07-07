@@ -5,12 +5,13 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from starlette.responses import JSONResponse
 
+from ..errors.jwt_error import RefreshTokenExpired, AccessTokenExpired
 from ..model.crud import user, authorization
 from ..model.crud.authorization import read_authorization
 from ..model.crud.user import read_users, read_user, update_user, delete_user
 from ..model.database import get_db
 from ..model.schemas import UserCreate, UserUpdate
-from ..utils.jwt import issue_token
+from ..utils.jwt import issue_token, check_auth_using_token
 
 router = APIRouter(prefix='/user', tags=['user'])
 
