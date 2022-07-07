@@ -48,20 +48,27 @@ async def create_user(user_info: UserCreate,
     }
 
 
-# TODO: Should adjust auth middleware.
 @router.get('/')
-async def read_user_info(user_id: str | None = None,
+async def read_user_info(payload: dict = Depends(check_auth_using_token),
+                         user_id: str | None = None,
                          email: str | None = None,
                          db: Session = Depends(get_db)):
     """
     When you want to get user info from database.
     You must input `user_id` or `email`. One of them!
 
+    :param payload:
     :param user_id:
     :param email:
     :param db:
     :return:
     """
+    if isinstance(payload, RefreshTokenExpired) or isinstance(payload, AccessTokenExpired):
+        return JSONResponse(content={
+            'success': False,
+            'detail': payload.detail
+        }, status_code=payload.status_code)
+
     result = await read_user(user_id=user_id, email=email, db=db)
 
     return {
@@ -73,9 +80,15 @@ async def read_user_info(user_id: str | None = None,
     }, status_code=404)
 
 
-# TODO: Should adjust auth middleware.
 @router.get('/all')
-async def get_all_users(db: Session = Depends(get_db)):
+async def get_all_users(payload: dict = Depends(check_auth_using_token),
+                        db: Session = Depends(get_db)):
+    if isinstance(payload, RefreshTokenExpired) or isinstance(payload, AccessTokenExpired):
+        return JSONResponse(content={
+            'success': False,
+            'detail': payload.detail
+        }, status_code=payload.status_code)
+
     users = await read_users(db)
     return {
         'success': True,
@@ -86,9 +99,9 @@ async def get_all_users(db: Session = Depends(get_db)):
     }, status_code=404)
 
 
-# TODO: Should adjust auth middleware.
 @router.patch('/')
 async def update_user_info(user_info: UserUpdate,
+                           payload: dict = Depends(check_auth_using_token),
                            user_id: str | None = Query(default=None, description='One of way to select user.'),
                            db: Session = Depends(get_db)):
     """
@@ -101,6 +114,11 @@ async def update_user_info(user_info: UserUpdate,
     :param db:
     :return:
     """
+    if isinstance(payload, RefreshTokenExpired) or isinstance(payload, AccessTokenExpired):
+        return JSONResponse(content={
+            'success': False,
+            'detail': payload.detail
+        }, status_code=payload.status_code)
 
     # Check authorization first.
     if not await read_authorization(user_info.authorization, db):
@@ -124,9 +142,17 @@ async def update_user_info(user_info: UserUpdate,
     }
 
 
-# TODO: Should adjust auth middleware.
+# TODO: Check authorization. (whether admin or member)
 @router.delete('/')
-async def remove_user(user_id: str, db: Session = Depends(get_db)):
+async def remove_user(user_id: str,
+                      payload: dict = Depends(check_auth_using_token),
+                      db: Session = Depends(get_db)):
+    if isinstance(payload, RefreshTokenExpired) or isinstance(payload, AccessTokenExpired):
+        return JSONResponse(content={
+            'success': False,
+            'detail': payload.detail
+        }, status_code=payload.status_code)
+
     rows = await delete_user(user_id=user_id, db=db)
 
     if not rows:
