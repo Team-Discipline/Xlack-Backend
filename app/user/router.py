@@ -41,7 +41,9 @@ async def create_user(user_info: UserCreate,
     return {
         'success': True,
         'message': 'Successfully created user.',
-        'user': await read_user(db=db, email=user_info.email)
+        'user': await read_user(db=db, email=user_info.email),
+        'access_token': access_token,
+        'refresh_token': refresh_token
     }
 
 
