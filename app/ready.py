@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+
 import app.model.database as database
 
 
@@ -13,6 +14,7 @@ def ready_app() -> FastAPI:
     app = FastAPI(
         title='Xlack',
         description='Furthermore Workspace.',
-        version='0.1.0'
+        version='0.1.0',
+        openapi_url='/api/openapi.json'
     )
     return app
