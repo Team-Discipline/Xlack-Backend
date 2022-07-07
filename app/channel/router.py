@@ -9,7 +9,7 @@ router = APIRouter(prefix='/channel', tags=['channel'])
 # Channels
 
 @router.get('/create_channel')
-async def get_channel_info(channel_id: int, channel_name: str, channel_date: datetime):
+async def get_channel_info(channel_id: int, channel_date: datetime, channel_name: str | None = Query(defalt="unnamed")):
     return {"channel_id": channel_id,
             "channel_name": channel_name,
             "channel_date": channel_date}
