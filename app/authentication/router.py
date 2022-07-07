@@ -84,3 +84,29 @@ async def get_user_info(github_access_token: str = Query(
         'message': 'Successfully get user information from github.',
         'github_info': json.loads(res.content)
     }
+
+
+@router.get('/revoke_token/{user_id}')
+async def revoke_token(user_id: str, db: Session = Depends(get_db)):
+    user_info = await read_user(db, user_id=user_id)
+
+    # Check `user_id` is valid first.
+    if user_info is None:
+        raise HTTPException(detail='No such user', status_code=404)
+
+    try:
+        rows = await update_user(db=db, user_id=user_id,
+                                 email=user_info.email,
+                                 name=user_info.name,
+                                 authorization_name=user_info.authorization,
+                                 thumbnail_url=user_info.thumbnail_url)
+        if not rows:
+            raise HTTPException(detail='[Serious] Not updated!', status_code=404)
+
+    except Exception as e:
+        raise HTTPException(detail=e.__str__(), status_code=400)
+
+    return {
+        'success': True,
+        'message': 'Successfully revoked refresh token.'
+    }
