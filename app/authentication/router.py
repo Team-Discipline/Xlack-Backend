@@ -1,9 +1,12 @@
 import json
 import os
 
-from fastapi import APIRouter, Request, Query
+from fastapi import APIRouter, Request, Query, Depends, HTTPException
 from fastapi.responses import RedirectResponse
+from sqlalchemy.orm import Session
 
+from ..model.crud.user import update_user, read_user
+from ..model.database import get_db
 from ..utils.github_auth import exchange_code_for_access_token, get_user_data_from_github
 
 router = APIRouter(prefix='/authentication', tags=['authentication'])
@@ -60,7 +63,7 @@ async def redirect_github(request: Request, code: str):
     }
 
 
-@router.get('/user_info')
+@router.get('/user_info/github')
 async def get_user_info(github_access_token: str = Query(
     alias='Access Token From Github.',
     title='github access token',
