@@ -18,5 +18,5 @@ app.include_router(authorization_router)
 
 if __name__ == '__main__':
     is_debugging = os.getenv('IS_DEBUGGING')
-    bool(is_debugging if is_debugging is not None else False)
-    uvicorn.run(app='main:app', host='0.0.0.0', port=8080, reload=is_debugging, log_level='info', root_path='/api')
+    is_debugging = bool(is_debugging if is_debugging is not None else False)
+    uvicorn.run(app='main:app', host='0.0.0.0', port=8080, reload=is_debugging, log_level='info')
