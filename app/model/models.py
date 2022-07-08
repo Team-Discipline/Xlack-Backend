@@ -32,3 +32,12 @@ class Authorization(Base):
     uuid = Column(String(50), nullable=False, primary_key=True, default=uuid.uuid4())
     name = Column(String(25), unique=True, nullable=False)
     created_at = Column(TIMESTAMP(), nullable=False, default=func.now())
+
+
+class Channel(Base):
+    __tablename__ = 'channels'
+
+    uuid = Column(String(50), unique=True, nullable=False, primary_key=True)
+    channel_id = Column(Integer(), autoincrement=True, unique=True)
+    channel_name = Column(String(50))
+    created_at = Column(TIMESTAMP(), defualt=func.now())
