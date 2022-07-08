@@ -15,8 +15,12 @@ async def create_channel(db: Session, channel_name: str) -> models.Channel:
     return channel
 
 
-async def read_channel(db: Session) -> models.Channel:
-    return ''
+async def read_channel(db: Session, channel_name: str) -> str:
+    channel = models.Channel(uuid=str(uuid.uuid4()), channel_name=channel_name)
+    # db.get(channel, channel_name)
+    # db.commit()
+    # db.refresh(channel)
+    return db.get(channel, channel_name)
 
 
 async def read_channels(db: Session) -> [models.Channel]:
@@ -24,8 +28,8 @@ async def read_channels(db: Session) -> [models.Channel]:
 
 
 async def update_channel(db: Session) -> int:
-    return ''
+    return None
 
 
 async def delete_channel(db: Session) -> int:
-    return ''
+    return None

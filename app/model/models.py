@@ -41,3 +41,13 @@ class Channel(Base):
     channel_id = Column(Integer(), autoincrement=True, unique=True)
     channel_name = Column(String(50))
     created_at = Column(TIMESTAMP(), defualt=func.now())
+
+
+class Chat(Base):
+    __tablename__ = 'chats'
+
+    uuid = Column(Integer())
+    chat_id = Column(Integer(), autoincrement=True, unique=True)
+    chat_content = Column(String())
+    chatter_name = Column(String(50))
+    create_at = Column(TIMESTAMP(), default=func.now())

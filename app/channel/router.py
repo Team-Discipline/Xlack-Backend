@@ -1,7 +1,6 @@
 from datetime import datetime
 
-from fastapi import APIRouter, HTTPException
-from fastapi import Depends
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -30,28 +29,31 @@ async def channel_create(channel_name: str = "Untitled", db: Session = Depends(g
 # @router.get('/create_channel/{channel_member}')
 # async def get_channel_info(member_name: str):
 #     return {member_name}
+@router.get('/')
+async def channel_read(channel_name: str, db: Session = Depends(get_db())):
+    return None
 
 
 @router.get('/info/{channel_info}')
 async def get_channel_feature(channel_info: str):
     return {
-        'sdlfkj': channel_info
+        'channel_info': channel_info
     }
 
 
 # FIXME: 의도 모르겠음.
 # TODO: 삭제
-@router.get('/create_channel/channel_info/{channel_date}')
-async def get_channel_datetime(date: datetime):
-    return date
+# @router.get('/create_channel/channel_info/{channel_date}')
+# async def get_channel_datetime(date: datetime):
+#     return date
 
 
 # FIXME: Change to update.
-@router.put('/create_channel/{channel_info}')
+@router.update('/create_channel/{channel_info}')
 async def update_channel(new_channel_name: str, update_date: datetime):
-    get_channel_info.channel_name = new_channel_name
-    get_channel_info.channel_date = update_date
-    return {get_channel_info}
+    update_channel.channel_name = new_channel_name
+    update_channel.channel_date = update_date
+    return {update_channel}
 
 
 # TODO: Don't need to use `create_channel`.
@@ -76,7 +78,7 @@ class Chat(BaseModel):
 
 
 # FIXME: Change method.
-# FIXME: Delte create keyword
+# FIXME: Delete create keyword
 @router.get('/create_chat', response_model=Chat)
 async def create_chat(chat: Chat):
     return chat
