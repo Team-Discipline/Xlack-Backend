@@ -1,4 +1,7 @@
+import os
+
 from fastapi import FastAPI
+
 import app.model.database as database
 
 
@@ -15,4 +18,10 @@ def ready_app() -> FastAPI:
         description='Furthermore Workspace.',
         version='0.1.0'
     )
+
+    is_debugging = os.getenv('IS_DEBUGGING')
+    if not bool(is_debugging if is_debugging is not None else False):
+        print(f'DEPLOY MODE.')
+        app.root_path = '/api'
+
     return app

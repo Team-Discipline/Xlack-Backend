@@ -1,5 +1,7 @@
-from sqlalchemy import Column, String, Integer, TIMESTAMP, func, ForeignKey
 import uuid
+
+from sqlalchemy import Column, String, Integer, TIMESTAMP, func, ForeignKey
+
 from .database import Base
 
 
@@ -19,7 +21,9 @@ class User(Base):
 
     authorization = Column(String(25), ForeignKey('authorizations.name'))
 
-    refresh_token = Column(String(100), unique=True, nullable=True)
+    refresh_token = Column(String(1000), unique=True, nullable=True)
+
+    thumbnail_url = Column(String(500), nullable=True)
 
 
 class Authorization(Base):
