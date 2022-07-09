@@ -4,8 +4,9 @@ from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from app.model.crud.channel import create_channel
+from app.model.crud.channel import create_channel, read_channel, read_channels, delete_channel
 from app.model.database import get_db
+
 
 router = APIRouter(prefix='/channel', tags=['channel'])
 
@@ -29,27 +30,29 @@ async def channel_create(channel_name: str = "Untitled", db: Session = Depends(g
 # @router.get('/create_channel/{channel_member}')
 # async def get_channel_info(member_name: str):
 #     return {member_name}
+
 @router.get('/')
-async def channel_read(channel_name: str, db: Session = Depends(get_db())):
-    return None
+async def channel_read_by_name(channel_name: str, db: Session = Depends(get_db())):
+    channel = await read_channel(db=db, channel_name=channel_name)
+
+    return {'read_channel': True,
+            'channel': channel}
+
+@router.get('/')
+async def channel_read(db: Session = Depends(get_db())):
+    all_channel = await read_channels(db=db)
+    return {'all_channel': all_channel}
 
 
-@router.get('/info/{channel_info}')
-async def get_channel_feature(channel_info: str):
-    return {
-        'channel_info': channel_info
-    }
-
-
-# FIXME: 의도 모르겠음.
-# TODO: 삭제
-# @router.get('/create_channel/channel_info/{channel_date}')
-# async def get_channel_datetime(date: datetime):
-#     return date
+# @router.get('/info/{channel_info}')
+# async def get_channel_feature(channel_info: str):
+#     return {
+#         'channel_info': channel_info
+#     }
 
 
 # FIXME: Change to update.
-@router.update('/create_channel/{channel_info}')
+@router.update('/')
 async def update_channel(new_channel_name: str, update_date: datetime):
     update_channel.channel_name = new_channel_name
     update_channel.channel_date = update_date
@@ -58,14 +61,12 @@ async def update_channel(new_channel_name: str, update_date: datetime):
 
 # TODO: Don't need to use `create_channel`.
 # FIXME: Refactoring.
-@router.delete('/create_channel/{channel_info}')
-async def delete_channel_info(member_name: str):
-    member_name = get_channel_info.get(member_name)
-    if member_name not in get_channel_info():
-        raise HTTPException(status_code=404)
-    get_channel_info.delete(member_name)
-    get_channel_info.commit()
-    return {"deleted": True}
+@router.delete('/')
+async def delete_channel(channel_name: str, db: Session = Depends(get_db())):
+    deleted_channel = await delete_channel(channel_name, db=db)
+    return {"deleted": True,
+            "deleted_channel": deleted_channel,
+            }
 
 
 # chats
