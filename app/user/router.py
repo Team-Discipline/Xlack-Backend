@@ -56,6 +56,8 @@ async def read_user_info(payload: dict = Depends(check_auth_using_token),
     """
     When you want to get user info from database.
     You must input `user_id` or `email`. One of them!
+    The tokens are just needed to be valid.
+    Don't check who's token.
 
     :param payload:
     :param user_id:
@@ -109,6 +111,7 @@ async def update_user_info(user_info: UserUpdate,
     Put user information you want to update on **request body**.
     Use `user_id`.
 
+    :param payload:
     :param user_info:
     :param user_id:
     :param db:
@@ -133,7 +136,7 @@ async def update_user_info(user_info: UserUpdate,
                              refresh_token=user_info.refresh_token)
 
     if not rows:
-        raise HTTPException(detail='Not updated.')
+        raise HTTPException(detail='Not updated.', status_code=403)
 
     return {
         'success': True,
