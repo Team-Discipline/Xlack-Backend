@@ -30,7 +30,7 @@ async def channel_create(channel_name: str = "Untitled", db: Session = Depends(g
 # async def get_channel_info(member_name: str):
 #     return {member_name}
 @router.get('/')
-async def channel_read(channel_name: str, db: Session = Depends(get_db())):
+async def channel_read(channel_name: str, db: Session = Depends(get_db)):
     return None
 
 
@@ -49,11 +49,11 @@ async def get_channel_feature(channel_info: str):
 
 
 # FIXME: Change to update.
-@router.update('/create_channel/{channel_info}')
-async def update_channel(new_channel_name: str, update_date: datetime):
-    update_channel.channel_name = new_channel_name
-    update_channel.channel_date = update_date
-    return {update_channel}
+# @router.update('/create_channel/{channel_info}')
+# async def update_channel(new_channel_name: str, update_date: datetime):
+#     update_channel.channel_name = new_channel_name
+#     update_channel.channel_date = update_date
+#     return {update_channel}
 
 
 # TODO: Don't need to use `create_channel`.

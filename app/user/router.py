@@ -2,8 +2,8 @@ from datetime import timedelta
 
 import sqlalchemy
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
-from starlette.responses import JSONResponse
 
 from ..errors.jwt_error import RefreshTokenExpired, AccessTokenExpired
 from ..model.crud import user, authorization
