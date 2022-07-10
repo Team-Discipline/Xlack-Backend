@@ -82,6 +82,7 @@ async def read_user_info(payload: dict = Depends(check_auth_using_token),
     }, status_code=404)
 
 
+# TODO: Check client's authorization.
 @router.get('/all')
 async def get_all_users(payload: dict = Depends(check_auth_using_token),
                         db: Session = Depends(get_db)):
