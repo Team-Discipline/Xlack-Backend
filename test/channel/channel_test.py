@@ -1,19 +1,22 @@
 import unittest
-# from fastapi import HTTPException
-#
-# from app.model.crud.channel import create_channel, read_channel, read_channels, delete_channel, update_channel
-# from app.model.database import get_db
-from sqlalchemy.orm import Session
+
+from sqlalchemy import create_engine
+
+from app.channel.router import channel_create
+
 # from app.model import models
+
+engine = create_engine(url="app.model.database")
 
 
 class ChannelTest(unittest.TestCase):
 
-    def setUpClass(self) -> None:
-        self.channel_name: str
-        self.db: Session
+    @classmethod
+    def setUpClass(cls) -> None:
+        pass
 
-    def tearDownClass(self) -> None:
+    @classmethod
+    def tearDownClass(cls) -> None:
         pass
 
     def setUp(self) -> None:
@@ -22,5 +25,8 @@ class ChannelTest(unittest.TestCase):
     def tearDown(self) -> None:
         pass
 
-    # def test_create_channel(self):
-    #     channel = create_channel(channel_name="test_channel", db)
+    def test_create_channel(self):
+        my_db = {
+            'channel': 'test_channel_name'
+        }
+        channel_test = channel_create(channel_name="test_channel_name", db=my_db)

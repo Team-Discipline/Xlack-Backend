@@ -8,7 +8,7 @@ router = APIRouter(prefix='/channel', tags=['channel'])
 
 
 @router.post('/')
-async def channel_create(channel_name: str = "Untitled", db: Session = Depends(get_db)):
+async def channel_create(channel_name: str = "Untitled", db: Session = Depends(get_db())):
     # TODO: Connect to db.
     # TODO: 1. Input channel information to db.
 
@@ -23,10 +23,10 @@ async def channel_create(channel_name: str = "Untitled", db: Session = Depends(g
 
 @router.get('/')
 async def channel_read_by_name(channel_name: str, db: Session = Depends(get_db())):
-    channel_read = await read_channel(db=db, channel_name=channel_name)
+    channel = await read_channel(db=db, channel_name=channel_name)
 
     return {'read_channel': True,
-            'channel': channel_read}
+            'channel': channel}
 
 
 @router.get('/')

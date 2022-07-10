@@ -1,7 +1,7 @@
-from sqlalchemy.orm import Session
 from fastapi import APIRouter, HTTPException, Depends
+from sqlalchemy.orm import Session
 
-from app.model.crud.chat import create_chat, show_chat, show_chats, update_chat, delete_chat
+from app.model.crud.chat import create_chat, read_chat, read_chats, update_chat, delete_chat
 from app.model.database import get_db
 
 router = APIRouter(prefix='/chat', tags=['chat'])
@@ -20,7 +20,7 @@ async def chat_create(chat_id: int, chat_content: str,
 
 @router.get('/')
 async def show_chat_by_id(chat_id: int, db: Session = Depends(get_db())):
-    chat = await show_chat(chat_id=chat_id, db=db)
+    chat = await read_chat(chat_id=chat_id, db=db)
     if chat_id:
         raise HTTPException(status_code=404, detail="404 chat_id not found")
     else:
@@ -30,7 +30,7 @@ async def show_chat_by_id(chat_id: int, db: Session = Depends(get_db())):
 
 @router.get('/every')
 async def show_chat_all(db: Session = Depends(get_db())):
-    all_chat = await show_chats(db=db)
+    all_chat = await read_chats(db=db)
     return {'success': True,
             'all_chat': all_chat}
 

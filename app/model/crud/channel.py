@@ -3,7 +3,6 @@ import uuid
 from sqlalchemy.orm import Session
 
 from app.model import models
-from fastapi import HTTPException
 
 
 async def create_channel(db: Session, channel_name: str) -> models.Channel:
@@ -25,11 +24,10 @@ async def read_channels(db: Session) -> [models.Channel]:
 
 
 async def update_channel(db: Session, old_channel_name: str, new_channel_name: str) -> int:
-    old_channel_name = db.query(models.Channel).filter_by(old_channel_name=old_channel_name)
-    new_channel_name = db.query(models.Channel).filter_by(new_channel_name=new_channel_name)
-    channel_updated = db.query(old_channel_name == new_channel_name)
+    channel_update = db.query(models.Channel). \
+        filter(models.Channel.name == old_channel_name).update({'name': new_channel_name})
     db.commit()
-    return channel_updated
+    return channel_update
 
 
 async def delete_channel(db: Session, channel_name: str) -> int:
