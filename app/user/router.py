@@ -87,7 +87,6 @@ async def read_user_info(payload: dict = Depends(check_auth_using_token),
     }, status_code=404)
 
 
-# TODO: Check client's authorization.
 @router.get('/all')
 async def get_all_users(payload: dict = Depends(check_auth_using_token),
                         db: Session = Depends(get_db)):
@@ -96,6 +95,11 @@ async def get_all_users(payload: dict = Depends(check_auth_using_token),
             'success': False,
             'detail': payload.detail
         }, status_code=payload.status_code)
+
+    auth = payload['authorization']
+    if auth != 'admin':
+        # TODO: Implement authorization error.
+        raise HTTPException(detail='Not enough authorization to do this.', status_code=status.HTTP_401_UNAUTHORIZED)
 
     users = await read_users(db)
     return {
@@ -128,6 +132,12 @@ async def update_user_info(user_info: UserUpdate,
             'success': False,
             'detail': payload.detail
         }, status_code=payload.status_code)
+
+    # To update user's information, Be admin or client itself.
+    auth = payload['authorization']
+    client_user_id = payload['user_id']
+    if auth != 'admin' or user_id != client_user_id:
+        raise HTTPException('No authorization to do this.', status_code=status.HTTP_401_UNAUTHORIZED)
 
     # Check authorization first.
     if not await read_authorization(user_info.authorization, db):
