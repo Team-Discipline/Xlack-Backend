@@ -1,14 +1,15 @@
+import json
 from datetime import timedelta
 
 import sqlalchemy
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from ..errors.jwt_error import RefreshTokenExpired, AccessTokenExpired
-from ..model.crud import user, authorization
+from ..model.crud import authorization
 from ..model.crud.authorization import read_authorization
-from ..model.crud.user import read_users, read_user, update_user, delete_user
+from ..model.crud.user import read_users, read_user, update_user, delete_user, create_user
 from ..model.database import get_db
 from ..model.schemas import UserCreate, UserUpdate
 from ..utils.jwt import issue_token, check_auth_using_token
