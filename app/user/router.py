@@ -17,27 +17,32 @@ router = APIRouter(prefix='/user', tags=['user'])
 
 
 @router.post('/')
-async def create_user(user_info: UserCreate,
+async def user_create(user_info: UserCreate,
                       db: Session = Depends(get_db)):
     # Check authorization first!
     if not await authorization.read_authorization(name=user_info.authorization, db=db):
         raise HTTPException(status_code=404, detail='No such authorization.')
 
-    # And then, Issue access_token and refresh_token.
-    access_token = issue_token(user_info=dict(user_info), delta=timedelta(hours=1))
-    refresh_token = issue_token(user_info=dict(user_info), delta=timedelta(days=14))
-
     # If authorization exists, create user
     try:
-        await user.create_user(github_id=str(user_info.github_id),
-                               email=user_info.email,
-                               name=user_info.name,
-                               authorization_name=user_info.authorization,
-                               refresh_token=refresh_token,
-                               thumbnail_url=user_info.thumbnail_url,
-                               db=db)
+        await create_user(github_id=str(user_info.github_id),
+                          email=user_info.email,
+                          name=user_info.name,
+                          authorization_name=user_info.authorization,
+                          refresh_token=None,
+                          thumbnail_url=user_info.thumbnail_url,
+                          db=db)
+
+        user = await read_user(db=db, email=user_info.email)
     except sqlalchemy.exc.IntegrityError as e:
         raise HTTPException(detail=e.args[0].split('\"')[1], status_code=400)
+
+    # And then, Issue access_token and refresh_token.
+    # TODO: FIXME: Change user data to `json` or `dict`.
+    user = json.dumps(user, default=dict)
+    print(f'user: {user}')
+    access_token = issue_token(user_info=user, delta=timedelta(hours=1))
+    refresh_token = issue_token(user_info=user, delta=timedelta(days=14))
 
     return {
         'success': True,
