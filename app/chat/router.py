@@ -37,7 +37,7 @@ async def show_chat_all(db: Session = Depends(get_db())):
 
 @router.patch('/')
 async def chat_update(chat_id: int, new_chat_content: str, db: Session = Depends(get_db())):
-    updated_chat = await update_chat(chat_id=chat_id, new_chat_content=new_chat_content, db=db)
+    updated_chat = await update_chat(new_chat_content=new_chat_content, db=db)
     return {'success': True,
             'updated_chat': updated_chat}
 

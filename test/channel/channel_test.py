@@ -1,32 +1,51 @@
-import unittest
+from fastapi.testclient import TestClient
 
-from sqlalchemy import create_engine
+from app.channel.router import router
 
-from app.channel.router import channel_create
-
-# from app.model import models
-
-engine = create_engine(url="app.model.database")
+client = TestClient(router)
 
 
-class ChannelTest(unittest.TestCase):
+# class ChannelTest(unittest.TestCase):
+#
+#     @classmethod
+#     def setUpClass(cls) -> None:
+#         pass
+#
+#     @classmethod
+#     def tearDownClass(cls) -> None:
+#         pass
+#
+#     def setUp(self) -> None:
+#         pass
+#
+#     def tearDown(self) -> None:
+#         pass
 
-    @classmethod
-    def setUpClass(cls) -> None:
-        pass
 
-    @classmethod
-    def tearDownClass(cls) -> None:
-        pass
+def test_channel_read_by_name(channel_name):
+    response = client.get('/')
+    assert response.status_code == 200
+    assert response.json() == {"channel_name": "test_channel_name"}
 
-    def setUp(self) -> None:
-        pass
 
-    def tearDown(self) -> None:
-        pass
+def test_channel_name_not_found():
+    response = client.get('/')
+    assert response.status_code == 404
+    assert response.json() == {"detail": "channel_name not found"}
 
-    def test_create_channel(self):
-        my_db = {
-            'channel': 'test_channel_name'
-        }
-        channel_test = channel_create(channel_name="test_channel_name", db=my_db)
+
+def test_invalid_keyword_error():
+    response = client.get('/')
+    assert response.status_code == 400
+    assert response.json() == {'detail': "invalid channel name requested"}
+
+
+def test_db_connection_error():
+    response = client.get('/')
+    assert response.status_code == 400
+    assert response.json() == {'detail': 'db connection error'}
+
+
+def test_print():
+    response = client.get('/')
+    assert response.json() == {'print': 'print'}

@@ -36,8 +36,8 @@ async def channel_read(db: Session = Depends(get_db())):
 
 
 @router.patch('/')
-async def channel_update(new_channel_name: str, db: Session = Depends(get_db())):
-    channel_updated = await update_channel(db=db, new_channel_name=new_channel_name)
+async def channel_update(new_channel_name: str, old_channel_name: str, db: Session = Depends(get_db())):
+    channel_updated = await update_channel(db=db, new_channel_name=new_channel_name, old_channel_name=old_channel_name)
     return {'channel updated': True,
             'channel': channel_updated}
 
