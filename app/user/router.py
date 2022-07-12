@@ -95,17 +95,19 @@ async def user_read(user_id: str,
 
 
 @router.get('/all')
-async def get_all_users(payload: dict = Depends(check_auth_using_token),
+async def get_all_users(token_payload: dict = Depends(check_auth_using_token),
                         db: Session = Depends(get_db)):
-    if isinstance(payload, RefreshTokenExpired) or isinstance(payload, AccessTokenExpired):
+    """
+    Only `admin` authorization can get this endpoint.
+    """
+    if isinstance(token_payload, RefreshTokenExpired) or isinstance(token_payload, AccessTokenExpired):
         return JSONResponse(content={
             'success': False,
-            'detail': payload.detail
-        }, status_code=payload.status_code)
+            'detail': token_payload.detail
+        }, status_code=token_payload.status_code)
 
-    auth = payload['authorization']
+    auth = token_payload['authorization']
     if auth != 'admin':
-        # TODO: Implement authorization error.
         raise HTTPException(detail='Not enough authorization to do this.', status_code=status.HTTP_401_UNAUTHORIZED)
 
     users = await read_users(db)
@@ -120,31 +122,25 @@ async def get_all_users(payload: dict = Depends(check_auth_using_token),
 
 @router.patch('/')
 async def update_user_info(user_info: UserUpdate,
-                           payload: dict = Depends(check_auth_using_token),
+                           token_payload: dict = Depends(check_auth_using_token),
                            user_id: str | None = Query(default=None, description='One of way to select user.'),
                            db: Session = Depends(get_db)):
     """
     When you want to update user's information.
     Put user information you want to update on **request body**.
     Use `user_id`.
-
-    :param payload:
-    :param user_info:
-    :param user_id:
-    :param db:
-    :return:
     """
-    if isinstance(payload, RefreshTokenExpired) or isinstance(payload, AccessTokenExpired):
+    if isinstance(token_payload, RefreshTokenExpired) or isinstance(token_payload, AccessTokenExpired):
         return JSONResponse(content={
             'success': False,
-            'detail': payload.detail
-        }, status_code=payload.status_code)
+            'detail': token_payload.detail
+        }, status_code=token_payload.status_code)
 
     # To update user's information, Be admin or client itself.
-    auth = payload['authorization']
-    client_user_id = payload['user_id']
+    auth = token_payload['authorization']
+    client_user_id = token_payload['user_id']
     if auth != 'admin' or user_id != client_user_id:
-        raise HTTPException('No authorization to do this.', status_code=status.HTTP_401_UNAUTHORIZED)
+        raise HTTPException(detail='No authorization to do this.', status_code=status.HTTP_401_UNAUTHORIZED)
 
     # Check authorization first.
     if not await read_authorization(user_info.authorization, db):
@@ -168,21 +164,25 @@ async def update_user_info(user_info: UserUpdate,
     }
 
 
-# TODO: Check authorization. (whether admin or member)
 @router.delete('/')
 async def remove_user(user_id: str,
-                      payload: dict = Depends(check_auth_using_token),
+                      token_payload: dict = Depends(check_auth_using_token),
                       db: Session = Depends(get_db)):
-    if isinstance(payload, RefreshTokenExpired) or isinstance(payload, AccessTokenExpired):
+    if isinstance(token_payload, RefreshTokenExpired) or isinstance(token_payload, AccessTokenExpired):
         return JSONResponse(content={
             'success': False,
-            'detail': payload.detail
-        }, status_code=payload.status_code)
+            'detail': token_payload.detail
+        }, status_code=token_payload.status_code)
+
+    auth = token_payload['authorization']
+    client_user_id = token_payload['user_id']
+    if auth != 'admin' or user_id != client_user_id:
+        raise HTTPException(detail='No authorization to do this.', status_code=status.HTTP_401_UNAUTHORIZED)
 
     rows = await delete_user(user_id=user_id, db=db)
 
     if not rows:
-        raise HTTPException(detail='Not deleted.', status_code=404)
+        raise HTTPException(detail='Not deleted.', status_code=status.HTTP_404_NOT_FOUND)
 
     return {
         'success': True,
