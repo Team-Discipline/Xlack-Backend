@@ -83,7 +83,13 @@ async def user_read(user_id: str,
             'detail': token_payload.detail
         }, status_code=token_payload.status_code)
 
-    result = await read_user(user_id=user_id, email=email, db=db)
+    # Check if client is `admin` or client itself.
+    auth = token_payload['authorization']
+    client_id = token_payload['user_id']
+    if auth != 'admin' or client_id != user_id:
+        raise HTTPException(detail='Not enough authorization to do this.', status_code=status.HTTP_401_UNAUTHORIZED)
+
+    result = await read_user(user_id=user_id, db=db)
 
     return {
         'success': True,
