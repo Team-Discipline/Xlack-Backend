@@ -50,22 +50,13 @@ async def read_user(db: Session,
     :param db:
     :return: User model.
     """
-    if user_id is not None:
-        return db.query(models.User.user_id,
-                        models.User.email,
-                        models.User.name,
-                        models.User.authorization,
-                        models.User.created_at,
-                        models.User.thumbnail_url) \
-            .filter(models.User.user_id == user_id).first()
-    elif email is not None:
-        return db.query(models.User.user_id,
-                        models.User.email,
-                        models.User.name,
-                        models.User.authorization,
-                        models.User.created_at,
-                        models.User.thumbnail_url) \
-            .filter(models.User.email == email).first()
+    return db.query(models.User.user_id,
+                    models.User.email,
+                    models.User.name,
+                    models.User.authorization,
+                    models.User.created_at,
+                    models.User.thumbnail_url) \
+        .filter(models.User.user_id == user_id).first()
 
 
 async def read_users(db: Session) -> [models.User]:
