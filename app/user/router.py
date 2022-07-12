@@ -1,4 +1,3 @@
-import json
 from datetime import timedelta
 
 import sqlalchemy
@@ -39,11 +38,25 @@ async def user_create(user_info: UserCreate,
         raise HTTPException(detail=e.args[0].split('\"')[1], status_code=400)
 
     # And then, Issue access_token and refresh_token.
-    # TODO: FIXME: Change user data to `json` or `dict`.
-    user = json.dumps(user, default=dict)
-    print(f'user: {user}')
+    user = {
+        'user_id': user.user_id,
+        'email': user.email,
+        'name': user.name,
+        'authorization': user.authorization,
+        'created_at': str(user.created_at),
+        'thumbnail_url': user.thumbnail_url
+    }  # This code is inevitable to convert to `dict` object. Fucking `datetime` is not json parsable.
     access_token = issue_token(user_info=user, delta=timedelta(hours=1))
     refresh_token = issue_token(user_info=user, delta=timedelta(days=14))
+
+    # And then, Update user info with `refresh_token`.
+    await update_user(db=db,
+                      user_id=user['user_id'],
+                      email=user['email'],
+                      name=user['name'],
+                      authorization_name=user['authorization'],
+                      thumbnail_url=user['thumbnail_url'],
+                      refresh_token=refresh_token)
 
     return {
         'success': True,
