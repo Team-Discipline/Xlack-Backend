@@ -47,8 +47,6 @@ async def read_user(db: Session,
     Return user data using one of parameter below.
 
     :param user_id: Using when identifying user.
-    :param github_id: Using when identifying user.
-    :param email: Using when identifying user.
     :param db:
     :return: User model.
     """
