@@ -51,7 +51,7 @@ async def user_create(user_info: UserCreate,
 
     # And then, Update user info with `refresh_token`.
     await update_user(db=db,
-                      user_id=user['user_id'],
+                      user_id=str(user['user_id']),
                       email=user['email'],
                       name=user['name'],
                       authorization_name=user['authorization'],
@@ -68,27 +68,20 @@ async def user_create(user_info: UserCreate,
 
 
 @router.get('/')
-async def read_user_info(payload: dict = Depends(check_auth_using_token),
-                         user_id: str | None = None,
-                         email: str | None = None,
-                         db: Session = Depends(get_db)):
+async def user_read(user_id: str,
+                    token_payload: dict = Depends(check_auth_using_token),
+                    db: Session = Depends(get_db)):
     """
     When you want to get user info from database.
     You must input `user_id` or `email`. One of them!
     The tokens are just needed to be valid.
     Don't check who's token.
-
-    :param payload:
-    :param user_id:
-    :param email:
-    :param db:
-    :return:
     """
-    if isinstance(payload, RefreshTokenExpired) or isinstance(payload, AccessTokenExpired):
+    if isinstance(token_payload, RefreshTokenExpired) or isinstance(token_payload, AccessTokenExpired):
         return JSONResponse(content={
             'success': False,
-            'detail': payload.detail
-        }, status_code=payload.status_code)
+            'detail': token_payload.detail
+        }, status_code=token_payload.status_code)
 
     result = await read_user(user_id=user_id, email=email, db=db)
 
