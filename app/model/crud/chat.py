@@ -26,10 +26,8 @@ async def read_chats(db: Session):
     return db.query(models.Chat).all()
 
 
+# make .update
 async def update_chat(db: Session, old_chat_content: str, new_chat_content: str):
-    # chat_updated = models.Chat(uuid=int(uuid.uuid4()),
-    #                            chat_id=chat_id,
-    #                            chat_content=new_chat_content)
     chat_updated = db.query(models.Chat). \
         filter(models.Chat.chat_content == old_chat_content).update({'new_chat_content': new_chat_content})
     db.commit()
