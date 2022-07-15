@@ -38,16 +38,16 @@ class Channel(Base):
     __tablename__ = 'channels'
 
     uuid = Column(String(50), unique=True, nullable=False, primary_key=True)
-    channel_id = Column(Integer, autoincrement=True, unique=True)
+    channel_id = Column(Integer(), autoincrement=True, unique=True)
     channel_name = Column(String(50))
-    created_at = Column(TIMESTAMP(), defualt=func.now())
+    created_at = Column(TIMESTAMP(), default=func.now())
 
 
 class Chat(Base):
     __tablename__ = 'chats'
 
-    uuid = Column(Integer, primary_key=True, unique=True)
-    chat_id = Column(Integer, autoincrement=True, unique=True)
-    chat_content = Column(String(1000))
+    uuid = Column(String(50), unique=True, nullable=False, primary_key=True)
+    chat_id = Column(Integer(), autoincrement=True, unique=True)
+    chat_content = Column(String(4000))
     chatter_name = Column(String(50))
     create_at = Column(TIMESTAMP(), default=func.now())

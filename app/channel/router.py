@@ -1,61 +1,103 @@
+from datetime import datetime
+
 from fastapi import APIRouter, HTTPException, Depends
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from app.model import models
-from app.model.crud.channel import create_channel, read_channel, read_channels, delete_channel, update_channel
-from app.model.database import engine
+from app.model.crud.channel import create_channel
 from app.model.database import get_db
-from app.model.schemas import Channel
 
 router = APIRouter(prefix='/channel', tags=['channel'])
-models.Base.metadata.create_all(bind=engine)
 
 
-@router.post('/', response_model=Channel)
-async def channel_create(channel: Channel, db: Session = Depends(get_db)):
-    db_channel = await create_channel(db, channel_name=channel.channel_name)
-    if db_channel != str:
-        raise HTTPException(status_code=400, detail='Invalid channel_name type error')
-    if db_channel:
-        raise HTTPException(status_code=400, detail='Channel already exist')
+# Channels
+
+@router.post('/')
+async def channel_create(channel_name: str = "Untitled", db: Session = Depends(get_db)):
+    # TODO: Connect to db.
+    # TODO: 1. Input channel information to db.
+
+    channel = await create_channel(db=db, channel_name=channel_name)
+
+    # TODO: 2. Return channel information.
     return {
         'success': True,
-        'channel': db_channel
+        'channel': channel
     }
 
 
-@router.get('/', response_model=Channel)
-async def channel_read_by_name(channel_name: str, db: Session = Depends(get_db)):
-    channels = await read_channel(db, channel_name=channel_name)
-    if channel_name is None:
-        raise HTTPException(status_code=404, detail='Channel_name not found')
-    return {'read_channel': True,
-            'channel': channels}
+# @router.get('/create_channel/{channel_member}')
+# async def get_channel_info(member_name: str):
+#     return {member_name}
+@router.get('/')
+async def channel_read(channel_name: str, db: Session = Depends(get_db)):
+    return None
 
 
-@router.get('/', response_model=Channel)
-async def channel_read(db: Session = Depends(get_db)):
-    all_channel = await read_channels(db)
-    return {'all_channel': all_channel}
+@router.get('/info/{channel_info}')
+async def get_channel_feature(channel_info: str):
+    return {
+        'channel_info': channel_info
+    }
 
 
-@router.patch('/', response_model=Channel)
-async def channel_update(new_channel_name: str, old_channel_name: str, db: Session = Depends(get_db)):
-    channel_updated = await update_channel(db, new_channel_name=new_channel_name, old_channel_name=old_channel_name)
-    if new_channel_name != str:
-        raise HTTPException(status_code=401, detail='new_channel_name type error, use string')
-    # if old_channel name is not in db
-    if old_channel_name:
-        raise HTTPException(status_code=404, detail='old_channel_name not found')
-    return {'channel updated': True,
-            'channel': channel_updated}
+# FIXME: 의도 모르겠음.
+# TODO: 삭제
+# @router.get('/create_channel/channel_info/{channel_date}')
+# async def get_channel_datetime(date: datetime):
+#     return date
 
 
-@router.delete('/', response_model=Channel)
-async def delete_channel(channel_name: str, db: Session = Depends(get_db)):
-    deleted_channel = await delete_channel(channel_name, db=db)
-    if channel_name not in db:
-        raise HTTPException(status_code=404, detail="channel_name not found")
-    return {"deleted": True,
-            "deleted_channel": deleted_channel
-            }
+# FIXME: Change to update.
+# @router.update('/create_channel/{channel_info}')
+# async def update_channel(new_channel_name: str, update_date: datetime):
+#     update_channel.channel_name = new_channel_name
+#     update_channel.channel_date = update_date
+#     return {update_channel}
+
+
+# TODO: Don't need to use `create_channel`.
+# FIXME: Refactoring.
+@router.delete('/create_channel/{channel_info}')
+async def delete_channel_info(member_name: str):
+    member_name = get_channel_info.get(member_name)
+    if member_name not in get_channel_info():
+        raise HTTPException(status_code=404)
+    get_channel_info.delete(member_name)
+    get_channel_info.commit()
+    return {"deleted": True}
+
+
+# chats
+
+# FIXME: Refactoring.
+class Chat(BaseModel):
+    chatter: str
+    content: str
+    date: datetime
+
+
+# FIXME: Change method.
+# FIXME: Delete create keyword
+@router.get('/create_chat', response_model=Chat)
+async def create_chat(chat: Chat):
+    return chat
+
+
+# FIXME: Remove `create` keyword.
+# TODO: Refactoring.
+@router.get('/create_chat/{show_chat}')
+async def show_chat(chat: Chat):
+    return {"content": chat.content,
+            "chatter": chat.chatter,
+            "date": chat.date}
+
+
+# FIXME: remove create.
+@router.delete('/create_chat')
+async def delete_chat(chat: Chat):
+    if chat not in chat:  # if not chat: /
+        raise HTTPException(status_code=404, detail="404 chat not found")
+    create_chat.delete(Chat)
+    create_chat.commit()
+    return {"chat deleted": True}
