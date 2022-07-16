@@ -1,13 +1,18 @@
+import base64
 import json
 import os
+from datetime import timedelta
 
-from fastapi import APIRouter, Request, Query, Depends, HTTPException
-from fastapi.responses import RedirectResponse
+from fastapi import APIRouter, Request, Query, Depends, HTTPException, status, Body
+from fastapi.responses import RedirectResponse, JSONResponse
+from jwt import ExpiredSignatureError
 from sqlalchemy.orm import Session
 
+from ..errors.jwt_error import AccessTokenExpired
 from ..model.crud.user import update_user, read_user
 from ..model.database import get_db
 from ..utils.github_auth import exchange_code_for_access_token, get_user_data_from_github
+from ..utils.jwt import check_auth_using_token, issue_token, decode
 
 router = APIRouter(prefix='/authentication', tags=['authentication'])
 
@@ -86,7 +91,7 @@ async def get_user_info(github_access_token: str = Query(
     }
 
 
-@router.get('/revoke_token/{user_id}')
+@router.post('/revoke_token/{user_id}')
 async def revoke_token(user_id: str, db: Session = Depends(get_db)):
     user_info = await read_user(db, user_id=user_id)
 
@@ -110,3 +115,48 @@ async def revoke_token(user_id: str, db: Session = Depends(get_db)):
         'success': True,
         'message': 'Successfully revoked refresh token.'
     }
+
+
+@router.post('/update/access_token')
+async def update_access_token(access_token: str = Body(...),
+                              db: Session = Depends(get_db)):
+    # Check whether access token is expired first.
+    try:
+        decode(access_token, key='secret_key', algorithms=['HS256'])
+        return JSONResponse(content={
+            'success': False,
+            'message': 'You can this endpoint when only access token is expired.'
+        }, status_code=status.HTTP_403_FORBIDDEN)
+    except ExpiredSignatureError:
+        pass
+
+    # Get payload from expired token.
+    payload = access_token.split(".")[1]
+    padded = payload + "=" * (4 - len(payload) % 4)
+    decoded = base64.b64decode(padded)
+    payload = json.loads(decoded)
+    print(f'payload: {payload}')
+
+    # Issue a new thing.
+    user = await read_user(db=db, user_id=payload['user_id'])
+    payload = {
+        'user_id': user.user_id,
+        'email': user.email,
+        'name': user.name,
+        'authorization': user.authorization,
+        'created_at': str(user.created_at),
+        'thumbnail_url': user.thumbnail_url
+    }  # This code is inevitable to convert to `dict` object. Fucking `datetime` is not json parsable.
+    access_token = issue_token(user_info=payload, delta=timedelta(hours=1))
+
+    return {
+        'success': True,
+        'message': 'Successfully re-issued access token.',
+        'access_token': access_token
+    }
+
+
+@router.post('/update/refresh_token')
+async def update_refresh_token(token_payload: dict = Depends(check_auth_using_token),
+                               db: Session = Depends(get_db)):
+    return ''
