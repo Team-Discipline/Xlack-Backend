@@ -45,10 +45,6 @@ async def read_user(db: Session,
                     user_id: str) -> models.User:
     """
     Return user data using one of parameter below.
-
-    :param user_id: Using when identifying user.
-    :param db:
-    :return: User model.
     """
     return db.query(models.User.user_id,
                     models.User.email,
