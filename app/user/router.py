@@ -25,7 +25,7 @@ async def user_create(user_info: UserCreate,
 
     # If authorization exists, create user
     try:
-        await create_user(github_id=str(user_info.github_id),
+        user = await create_user(github_id=str(user_info.github_id),
                           email=user_info.email,
                           name=user_info.name,
                           authorization_name=user_info.authorization,
@@ -33,7 +33,7 @@ async def user_create(user_info: UserCreate,
                           thumbnail_url=user_info.thumbnail_url,
                           db=db)
 
-        user = await read_user(db=db, email=user_info.email)
+        user = await read_user(db=db, user_id=user.user_id)
     except sqlalchemy.exc.IntegrityError as e:
         raise HTTPException(detail=e.args[0].split('\"')[1], status_code=400)
 
