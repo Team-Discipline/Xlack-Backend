@@ -6,9 +6,19 @@ from app.model.crud.chat import create_chat, read_chat, read_chats, update_chat,
 from app.model.database import engine
 from app.model.database import get_db
 from app.model.schemas import Chat
-
+from app.model.models import Authorization
 router = APIRouter(prefix='/chat', tags=['chat'])
 models.Base.metadata.create_all(bind=engine)
+
+
+async def chat_auth_check(name: str, auth: str, db: Session = Depends(get_db)):
+    check_auth = db.query(name=Chat.chatter_name, auth=Authorization.name, db=db)
+    if name != auth:
+        raise HTTPException(status_code=401, detail='chatter not authorized')
+    return {
+        'auth': check_auth,
+        'success': True
+    }
 
 
 @router.post('/', response_model=Chat)
