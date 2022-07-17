@@ -120,9 +120,25 @@ async def revoke_token(user_id: str, db: Session = Depends(get_db)):
 @router.post('/update/access_token')
 async def update_access_token(access_token: str = Body(...),
                               db: Session = Depends(get_db)):
+    return await __issue_new_token(timedelta(hours=1), access_token, db)
+
+
+@router.post('/update/refresh_token')
+async def update_refresh_token(refresh_token: str = Body(...),
+                               db: Session = Depends(get_db)):
+    return await __issue_new_token(timedelta(days=14), refresh_token, db)
+
+
+async def __issue_new_token(time: timedelta,
+                            token: str = Body(...),
+                            db: Session = Depends(get_db)):
+    """
+    Helper function that helps common logic
+    """
+
     # Check whether access token is expired first.
     try:
-        decode(access_token, key='secret_key', algorithms=['HS256'])
+        decode(token, key='secret_key', algorithms=['HS256'])
         return JSONResponse(content={
             'success': False,
             'message': 'You can this endpoint when only access token is expired.'
@@ -131,7 +147,7 @@ async def update_access_token(access_token: str = Body(...),
         pass
 
     # Get payload from expired token.
-    payload = access_token.split(".")[1]
+    payload = token.split(".")[1]
     padded = payload + "=" * (4 - len(payload) % 4)
     decoded = base64.b64decode(padded)
     payload = json.loads(decoded)
@@ -147,16 +163,10 @@ async def update_access_token(access_token: str = Body(...),
         'created_at': str(user.created_at),
         'thumbnail_url': user.thumbnail_url
     }  # This code is inevitable to convert to `dict` object. Fucking `datetime` is not json parsable.
-    access_token = issue_token(user_info=payload, delta=timedelta(hours=1))
+    token = issue_token(user_info=payload, delta=time)
 
     return {
         'success': True,
         'message': 'Successfully re-issued access token.',
-        'access_token': access_token
+        'access_token': token
     }
-
-
-@router.post('/update/refresh_token')
-async def update_refresh_token(token_payload: dict = Depends(check_auth_using_token),
-                               db: Session = Depends(get_db)):
-    return ''
