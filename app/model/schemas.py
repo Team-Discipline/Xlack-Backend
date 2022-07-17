@@ -77,3 +77,18 @@ class Authorization(Base):
     created_at = Column(TIMESTAMP(), nullable=False, default=func.now())
 
 """
+
+
+class Channel(BaseModel):
+    uuid: str
+    channel_name: str = "Untitled"
+    channel_id: int
+    created_at: datetime
+
+
+class Chat(BaseModel):
+    uuid: str
+    chat_id: int
+    chat_content: str = ' '
+    chatter_name: str
+    created_at: datetime
