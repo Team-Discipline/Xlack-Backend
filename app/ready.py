@@ -1,4 +1,6 @@
+import logging
 import os
+import sys
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -22,13 +24,31 @@ def ready_for_cors(app: FastAPI) -> FastAPI:
     return app
 
 
+def ready_for_logging():
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+    formatter = logging.Formatter('%(asctime)s | %(levelname)s | %(message)s')
+
+    stdout_handler = logging.StreamHandler(sys.stdout)
+    stdout_handler.setLevel(logging.DEBUG)
+    stdout_handler.setFormatter(formatter)
+
+    file_handler = logging.FileHandler('all.log')
+    file_handler.setLevel(logging.DEBUG)
+    file_handler.setFormatter(formatter)
+
+    logger.addHandler(file_handler)
+    logger.addHandler(stdout_handler)
+
+
 def ready_for_db():
     database.Base.metadata.create_all(bind=database.engine)
-    print(f'Ready for db!')
+    logging.debug(f'Ready for db!')
 
 
 def ready_app() -> FastAPI:
     ready_for_db()
+    ready_for_logging()
 
     app = FastAPI(
         title='Xlack',
@@ -40,7 +60,7 @@ def ready_app() -> FastAPI:
 
     is_debugging = os.getenv('IS_DEBUGGING')
     if not bool(is_debugging if is_debugging is not None else False):
-        print(f'DEPLOY MODE.')
+        logging.info(f'DEPLOY MODE.')
         app.root_path = '/api'
 
     return app

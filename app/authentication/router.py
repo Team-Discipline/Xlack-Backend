@@ -1,18 +1,22 @@
 import base64
 import json
+import logging
 import os
 from datetime import timedelta
 
-from fastapi import APIRouter, Request, Query, Depends, HTTPException, status, Body
-from fastapi.responses import RedirectResponse, JSONResponse
-from jwt import ExpiredSignatureError
+from fastapi import APIRouter, Request, Query, Depends, Body
+from fastapi.responses import RedirectResponse
+from jwt import decode, ExpiredSignatureError
 from sqlalchemy.orm import Session
+from starlette import status
+from starlette.responses import JSONResponse
 
 from ..errors.jwt_error import AccessTokenExpired
 from ..model.crud.user import update_user, read_user
 from ..model.database import get_db
 from ..utils.github_auth import exchange_code_for_access_token, get_user_data_from_github
-from ..utils.jwt import check_auth_using_token, issue_token, decode
+from ..utils.jwt import issue_token
+from ..utils.responses import FailureResponse, SuccessResponse
 
 router = APIRouter(prefix='/authentication', tags=['authentication'])
 
@@ -26,11 +30,12 @@ async def login_github():
 
     :return:
     """
+    logging.info('GET /authentication/github_login')
 
     client_id = os.getenv('GITHUB_CLIENT_ID')
     scope = 'read:user'
     url = f'https://github.com/login/oauth/authorize?client_id={client_id}&scope={scope}'
-    print(f'url: {url}')
+    logging.debug(f'url: {url}')
     return RedirectResponse(url)
 
 
@@ -41,31 +46,24 @@ async def redirect_github(request: Request, code: str):
 
     :return:
     """
-
-    print(f'params: {request.query_params}')
-    print(f'code: {code}')
+    logging.info('GET /authentication/redirect/github')
+    logging.debug(f'params: {request.query_params}')
+    logging.debug(f'code: {code}')
     res = exchange_code_for_access_token(code)
 
-    print(f'res: {res.content}')
+    logging.debug(f'res: {res.content}')
 
     content = str(res.content)
 
+    # Check error message.
+    # I know it's really messy way to deal with, But that's my best.
     first_word = content.split('&')[0].split('=')[0]
-
     if first_word == 'b\'error':
-        return {
-            'success': False,
-            'message': 'Failed to get access token.',
-            'detail': content.split('&')[1].split('=')[1]
-        }
+        return FailureResponse(message=content.split('&')[1].split('=')[1])
 
     access_token = content.split('&')[0].split('=')[1]
 
-    return {
-        'success': True,
-        'message': 'Successfully get access token from github.',
-        'access_token': access_token
-    }
+    return SuccessResponse(message='Successfully get access token from github.', access_token=access_token)
 
 
 @router.get('/user_info/github')
@@ -82,39 +80,33 @@ async def get_user_info(github_access_token: str = Query(
     :param github_access_token:
     :return:
     """
-
+    logging.info('GET /authentication/user_info/github')
     res = get_user_data_from_github(github_access_token)
-    return {
-        'success': True,
-        'message': 'Successfully get user information from github.',
-        'github_info': json.loads(res.content)
-    }
+    logging.debug(f'responses from github: {res}')
+    return SuccessResponse(message='Successfully get user information from github.',
+                           github_info=json.loads(res.content))
 
 
 @router.post('/revoke_token/{user_id}')
 async def revoke_token(user_id: str, db: Session = Depends(get_db)):
+    logging.info('GET /authentication/revoke_token/{user_id}')
     user_info = await read_user(db, user_id=user_id)
 
     # Check `user_id` is valid first.
     if user_info is None:
-        raise HTTPException(detail='No such user', status_code=404)
+        logging.info('No such user')
+        return FailureResponse(message='No such user', status_code=status.HTTP_404_NOT_FOUND)
 
-    try:
-        rows = await update_user(db=db, user_id=user_id,
-                                 email=user_info.email,
-                                 name=user_info.name,
-                                 authorization_name=user_info.authorization,
-                                 thumbnail_url=user_info.thumbnail_url)
-        if not rows:
-            raise HTTPException(detail='[Serious] Not updated!', status_code=404)
-
-    except Exception as e:
-        raise HTTPException(detail=e.__str__(), status_code=400)
-
-    return {
-        'success': True,
-        'message': 'Successfully revoked refresh token.'
-    }
+    rows = await update_user(db=db, user_id=user_id,
+                             email=user_info.email,
+                             name=user_info.name,
+                             authorization_name=user_info.authorization,
+                             thumbnail_url=user_info.thumbnail_url)
+    if not rows:
+        logging.warning('Not updated!')
+        return FailureResponse(message='Not updated!', status_code=status.HTTP_404_NOT_FOUND)
+    else:
+        return SuccessResponse(message='Successfully revoked refresh token.')
 
 
 @router.post('/update/access_token')
@@ -165,8 +157,4 @@ async def __issue_new_token(time: timedelta,
     }  # This code is inevitable to convert to `dict` object. Fucking `datetime` is not json parsable.
     token = issue_token(user_info=payload, delta=time)
 
-    return {
-        'success': True,
-        'message': 'Successfully re-issued access token.',
-        'access_token': token
-    }
+    return SuccessResponse(message='Successfully re-issued access token.', token=token)

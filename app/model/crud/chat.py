@@ -6,38 +6,37 @@ from app.model import models
 
 
 async def create_chat(db: Session,
-                      chat_id: int,
-                      chat_content: str,
-                      chatter: str):
-    chat = models.Chat(uuid=int(uuid.uuid4()), chat_id=chat_id,
-                       chat_content=chat_content, chatter_name=chatter)
-
+                      content: str,
+                      chatter_id: int) -> models.Chat:
+    chat = models.Chat(uuid=str(uuid.uuid4()),
+                       content=content,
+                       chatter_id=chatter_id)
     db.add(chat)
     db.commit()
     db.refresh(chat)
     return chat
 
 
-async def read_chat(db: Session, chat_id: int):
-    return db.query(models.Chat).filter_by(chat_id=chat_id)
+async def read_chat(db: Session, chat_id: int) -> models.Chat:
+    return db.query(models.Chat).filter(models.Chat.chat_id == chat_id).first()
 
 
-async def read_chats(db: Session):
+async def read_chats(db: Session) -> [models.Chat]:
     return db.query(models.Chat).all()
 
 
-# make .update
-async def update_chat(db: Session, old_chat_content: str, new_chat_content: str):
+async def update_chat(db: Session, chat_id: int, new_chat_content: str) -> int:
     chat_updated = db.query(models.Chat). \
-        filter(models.Chat.chat_content == old_chat_content).update({'new_chat_content': new_chat_content})
+        filter(models.Chat.chat_id == chat_id) \
+        .update({'content': new_chat_content})
     db.commit()
     return chat_updated
 
 
-async def delete_chat(db: Session, chat_id: int):
-    chat_deleted = db.query(models.Chat).filter_by(chat_id=chat_id)
-    db.delete(chat_deleted)
+async def delete_chat(db: Session, chat_id: int) -> int:
+    chat_deleted = db \
+        .query(models.Chat) \
+        .filter(models.Chat.chat_id == chat_id) \
+        .delete()
     db.commit()
-    db.refresh(chat_deleted)
-
     return chat_deleted
