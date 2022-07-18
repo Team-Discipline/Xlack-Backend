@@ -2,7 +2,8 @@ import logging
 from datetime import timedelta
 
 import sqlalchemy
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.params import Path
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
@@ -13,6 +14,7 @@ from ..model.crud.user import read_users, read_user, update_user, delete_user, c
 from ..model.database import get_db
 from ..model.schemas import UserCreate, UserUpdate
 from ..utils.jwt import issue_token, check_auth_using_token
+from ..utils.responses import FailureResponse, SuccessResponse
 
 router = APIRouter(prefix='/user', tags=['user'])
 

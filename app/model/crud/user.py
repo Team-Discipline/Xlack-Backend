@@ -2,7 +2,7 @@ import uuid
 
 from sqlalchemy.orm import Session
 
-from .. import models
+from app.model import models
 
 """
 This functions are not capable to authentication every actions.
@@ -42,7 +42,7 @@ async def create_user(db: Session,
 
 
 async def read_user(db: Session,
-                    user_id: str) -> models.User:
+                    user_id: int) -> models.User:
     """
     Return user data using one of parameter below.
 
@@ -50,12 +50,7 @@ async def read_user(db: Session,
     :param db:
     :return: User model.
     """
-    return db.query(models.User.user_id,
-                    models.User.email,
-                    models.User.name,
-                    models.User.authorization,
-                    models.User.created_at,
-                    models.User.thumbnail_url) \
+    return db.query(models.User) \
         .filter(models.User.user_id == user_id).first()
 
 
@@ -69,7 +64,7 @@ async def read_users(db: Session) -> [models.User]:
 
 
 async def update_user(db: Session,
-                      user_id: str,
+                      user_id: int,
                       email: str,
                       name: str,
                       thumbnail_url: str | None = None,
@@ -85,7 +80,7 @@ async def update_user(db: Session,
     :param email: Field to update.
     :param name: Field to update.
     :param refresh_token: Field to update. Not required.
-    :param authrization_name: Field to update. Not required.
+    :param authorization_name: Field to update. Not required.
     :param db:
     :return:
     """
@@ -103,7 +98,7 @@ async def update_user(db: Session,
     return user
 
 
-async def delete_user(user_id: str, db: Session) -> int:
+async def delete_user(user_id: int, db: Session) -> int:
     """
     Delete user using `user_id`. This function doesn't check authorization.
 

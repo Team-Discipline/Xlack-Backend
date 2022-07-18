@@ -1,23 +1,17 @@
 import logging
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, Depends, Body
 from sqlalchemy.orm import Session
+from starlette import status
 
+from app.errors.jwt_error import AccessTokenExpired, RefreshTokenExpired
 from app.model.crud.chat import create_chat, read_chat, read_chats, update_chat, delete_chat
 from app.model.database import get_db
-from app.model.schemas import Chat
+from app.model.schemas import Chat, ChatCreate
+from app.utils.jwt import check_auth_using_token
+from app.utils.responses import FailureResponse, SuccessResponse
 
 router = APIRouter(prefix='/chat', tags=['chat'])
-
-
-# async def chat_auth_check(name: str, auth: Session(get_auth)):
-#     check_auth = auth.get(name=Chat.chatter_name, auth=get_auth.name)
-#     if name != auth:
-#         raise HTTPException(status_code=401, detail='chatter not authorized')
-#     return {
-#         'auth': check_auth,
-#         'success': True
-#     }
 
 
 @router.post('/', response_model=Chat)

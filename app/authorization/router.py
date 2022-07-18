@@ -1,12 +1,13 @@
 import logging
 
 from fastapi import APIRouter, Depends, Query
-from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
+from starlette import status
 
 from app.model.crud.authorization import read_authorization, delete_authorization, update_authorization, \
     create_authorization, read_authorizations
 from app.model.database import get_db
+from app.utils.responses import FailureResponse, SuccessResponse
 
 router = APIRouter(prefix='/authorization', tags=['authorization'])
 

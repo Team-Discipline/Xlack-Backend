@@ -2,13 +2,15 @@ import json
 import logging
 import os
 
-from fastapi import APIRouter, Request, Query, Depends, HTTPException
+from fastapi import APIRouter, Request, Query, Depends
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
+from starlette import status
 
 from ..model.crud.user import update_user, read_user
 from ..model.database import get_db
 from ..utils.github_auth import exchange_code_for_access_token, get_user_data_from_github
+from ..utils.responses import FailureResponse, SuccessResponse
 
 router = APIRouter(prefix='/authentication', tags=['authentication'])
 
@@ -47,6 +49,8 @@ async def redirect_github(request: Request, code: str):
 
     content = str(res.content)
 
+    # Check error message.
+    # I know it's really messy way to deal with, But that's my best.
     first_word = content.split('&')[0].split('=')[0]
 
     if first_word == 'b\'error':
