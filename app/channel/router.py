@@ -6,14 +6,14 @@ from app.model.crud.channel import create_channel, read_channel, read_channels, 
 from app.model.database import engine
 from app.model.database import get_db
 from app.model.schemas import Channel
-from app.model.models import Authorization
+from app.authorization.router import get_auth
 
 router = APIRouter(prefix='/channel', tags=['channel'])
 models.Base.metadata.create_all(bind=engine)
 
 
-async def channel_auth_check(name: str, auth: str, db: Session = Depends(get_db)):
-    check_auth = db.query(name=Channel.ChannelMember.name, auth=Authorization.name, db=db)
+async def channel_auth_check(name: str, auth: Session = Depends(get_auth)):
+    check_auth = auth.query(name=Channel.ChannelMember.name, auth=get_auth.name)
     if name != auth:
         raise HTTPException(status_code=401, detail='channel not authorized')
     return {
