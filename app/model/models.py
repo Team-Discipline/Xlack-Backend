@@ -48,7 +48,7 @@ class Chat(Base, SerializerMixin):
     __tablename__ = 'chats'
 
     uuid = Column(String(50), unique=True, nullable=False, primary_key=True)
-    chat_id = Column(Integer(), autoincrement=True, unique=True)
-    chat_content = Column(String(4000))
-    chatter_name = Column(String(50))
-    create_at = Column(TIMESTAMP(), default=func.now())
+    chat_id = Column(Integer(), autoincrement=True, unique=True, nullable=False)
+    content = Column(String(4000), nullable=False)
+    chatter_id = Column(Integer(), ForeignKey('users.user_id'), nullable=False)
+    created_at = Column(TIMESTAMP(), default=func.now(), nullable=False)
