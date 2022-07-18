@@ -15,51 +15,111 @@ router = APIRouter(prefix='/chat', tags=['chat'])
 
 
 @router.post('/', response_model=Chat)
-async def chat_create(chat: Chat, db: Session = Depends(get_db)):
+async def chat_create(chat: ChatCreate,
+                      db: Session = Depends(get_db),
+                      token_payload=Depends(check_auth_using_token)):
     logging.info('POST /chat/')
-    db_chat = await create_chat(db, chat_id=chat.chat_id, chat_content=chat.chat_content,
-                                chatter=chat.chatter_name)
+
+    # Check auth from dependency
+    if isinstance(token_payload, AccessTokenExpired) or isinstance(token_payload, RefreshTokenExpired):
+        logging.debug('One of tokens is expired.')
+        return FailureResponse(message=token_payload.detail, status_code=token_payload.status_code)
+
+    if token_payload['authorization'] == 'guest':
+        logging.debug('guest is going to create channel')
+        return FailureResponse(status_code=status.HTTP_401_UNAUTHORIZED,
+                               message='Guest can\'t read channel')
+
+    db_chat = await create_chat(db=db,
+                                content=chat.content,
+                                chatter_id=chat.chatter_id)
     logging.debug(f'chat: {chat}')
 
     return SuccessResponse(message='Successfully Created Chat', chat=db_chat.to_dict())
 
 
 @router.get('/', response_model=Chat)
-async def show_chat_by_id(chat: Chat, chat_id: int, db: Session = Depends(get_db)):
+async def chat_read(chat_id: int,
+                    db: Session = Depends(get_db),
+                    token_payload=Depends(check_auth_using_token)):
     logging.info('GET /chat/')
-    chats = await read_chat(db, chat_id=chat_id)
-    if chat_id:
-        raise HTTPException(status_code=404, detail="404 chat_id not found")
-    else:
-        return {'success': True,
-                'chat': chats}
+
+    # Check auth from dependency
+    if isinstance(token_payload, AccessTokenExpired) or isinstance(token_payload, RefreshTokenExpired):
+        logging.debug('One of tokens is expired.')
+        return FailureResponse(message=token_payload.detail, status_code=token_payload.status_code)
+
+    if token_payload['authorization'] == 'guest':
+        logging.debug('guest is going to create channel')
+        return FailureResponse(status_code=status.HTTP_401_UNAUTHORIZED,
+                               message='Guest can\'t read channel')
+
+    chat = await read_chat(db, chat_id=chat_id)
 
     return SuccessResponse(chat=chat.to_dict())
 
-@router.get('/{every}', response_model=Chat)
-async def show_chat_all(db: Session = Depends(get_db)):
+
+@router.get('/all', response_model=Chat)
+async def show_chat_all(db: Session = Depends(get_db),
+                        token_payload=Depends(check_auth_using_token)):
     logging.info('GET /chat/all')
+
+    # Check auth from dependency
+    if isinstance(token_payload, AccessTokenExpired) or isinstance(token_payload, RefreshTokenExpired):
+        logging.debug('One of tokens is expired.')
+        return FailureResponse(message=token_payload.detail, status_code=token_payload.status_code)
+
+    if token_payload['authorization'] == 'guest':
+        logging.debug('guest is going to create channel')
+        return FailureResponse(status_code=status.HTTP_401_UNAUTHORIZED,
+                               message='Guest can\'t read channel')
+
     all_chat = await read_chats(db)
     logging.debug(f'all chats: {all_chat}')
     return SuccessResponse(chats=[chat.to_dict() for chat in all_chat])
 
 
+@router.patch('/{chat_id}', response_model=Chat)
+async def chat_update(chat_id: int,
+                      new_chat_content: str = Body(...),
+                      db: Session = Depends(get_db),
+                      token_payload=Depends(check_auth_using_token)):
+    logging.info('PATCH /channel/{chat_id}')
 
-@router.patch('/', response_model=Chat)
-async def chat_update(new_chat_content: str, old_chat_content: str, db: Session = Depends(get_db)):
-    logging.info('PATCH /channel/')
-    updated_chat = await update_chat(db, new_chat_content=new_chat_content, old_chat_content=old_chat_content)
+    # Check auth from dependency
+    if isinstance(token_payload, AccessTokenExpired) or isinstance(token_payload, RefreshTokenExpired):
+        logging.debug('One of tokens is expired.')
+        return FailureResponse(message=token_payload.detail, status_code=token_payload.status_code)
+
+    if token_payload['authorization'] == 'guest':
+        logging.debug('guest is going to create channel')
+        return FailureResponse(status_code=status.HTTP_401_UNAUTHORIZED,
+                               message='Guest can\'t read channel')
+
+    await update_chat(db, chat_id=chat_id, new_chat_content=new_chat_content)
+    updated_chat = await read_chat(db=db, chat_id=chat_id)
     logging.debug(f'updated chat: {updated_chat}')
 
     return SuccessResponse(message='Successfully edited chat.', updated_chat=updated_chat.to_dict())
 
-@router.delete('/', response_model=Chat)
-async def chat_delete(chat_id: int, db: Session = Depends(get_db)):
+
+@router.delete('/{chat_id}', response_model=Chat)
+async def chat_delete(chat_id: int,
+                      db: Session = Depends(get_db),
+                      token_payload=Depends(check_auth_using_token)):
     logging.info('DELETE /channel/')
-    chat_d = await delete_chat(db, chat_id=chat_id)
-    logging.debug(f'deleted chat count: {chat_d}')
-    if chat_id:
-        raise HTTPException(status_code=404, detail="404 chat_id not found")
-    else:
-        return {'success': True,
-                'chat_deleted': chat_d}
+
+    # Check auth from dependency
+    if isinstance(token_payload, AccessTokenExpired) or isinstance(token_payload, RefreshTokenExpired):
+        logging.debug('One of tokens is expired.')
+        return FailureResponse(message=token_payload.detail, status_code=token_payload.status_code)
+
+    if token_payload['authorization'] == 'guest':
+        logging.debug('guest is going to create channel')
+        return FailureResponse(status_code=status.HTTP_401_UNAUTHORIZED,
+                               message='Guest can\'t read channel')
+
+    rows = await delete_chat(db, chat_id=chat_id)
+    logging.debug(f'deleted chat count: {rows}')
+
+    return SuccessResponse(message='Successfully deleted.', count=rows)

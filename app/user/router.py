@@ -93,6 +93,10 @@ async def user_read(user_id: str,
             'detail': token_payload.detail
         }, status_code=token_payload.status_code)
 
+    if token_payload['authorization'] == 'guest':
+        logging.debug('this user has admin authorization.')
+        raise HTTPException(detail='Not enough authorization to do this.', status_code=status.HTTP_401_UNAUTHORIZED)
+
     result = await read_user(user_id=user_id, db=db)
     logging.debug(f'user: {result}')
 
@@ -129,10 +133,11 @@ async def get_all_users(token_payload: dict = Depends(check_auth_using_token),
     else:
         return FailureResponse(message='No users.', status_code=status.HTTP_404_NOT_FOUND)
 
-@router.patch('/')
+
+@router.patch('/{user_id}')
 async def update_user_info(user_info: UserUpdate,
                            token_payload: dict = Depends(check_auth_using_token),
-                           user_id: str | None = Query(default=None, description='One of way to select user.'),
+                           user_id: str | None = Path(default=None, description='One of way to select user.'),
                            db: Session = Depends(get_db)):
     """
     When you want to update user's information.
