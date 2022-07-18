@@ -79,19 +79,54 @@ class Authorization(Base):
 """
 
 
-class Channel(BaseModel):
+class ChannelBase(BaseModel):
+    channel_name: str
+
+
+class ChannelCreate(ChannelBase):
+    ...
+
+
+class Channel(ChannelCreate):
     uuid: str
     channel_name: str = "Untitled"
     channel_id: int
     created_at: datetime
 
+    class Config:
+        orm_mode = True
+
     class ChannelMember:
         name: str
 
 
-class Chat(BaseModel):
+class ChatBase(BaseModel):
+    content: str
+    chatter_id: int
+
+
+class ChatCreate(ChatBase):
+    ...
+
+
+class Chat(ChatCreate):
     uuid: str
     chat_id: int
-    chat_content: str = ' '
-    chatter_name: str
     created_at: datetime
+
+    class Config:
+        orm_mode = True
+
+
+"""
+
+class Chat(Base, SerializerMixin):
+    __tablename__ = 'chats'
+
+    uuid = Column(String(50), unique=True, nullable=False, primary_key=True)
+    chat_id = Column(Integer(), autoincrement=True, unique=True, nullable=False)
+    content = Column(String(4000), nullable=False)
+    chatter_id = Column(Integer(), ForeignKey('users.user_id'), nullable=False)
+    created_at = Column(TIMESTAMP(), default=func.now(), nullable=False)
+
+"""
