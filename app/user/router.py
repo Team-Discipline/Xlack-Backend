@@ -1,3 +1,4 @@
+import logging
 from datetime import timedelta
 
 import sqlalchemy
@@ -19,22 +20,28 @@ router = APIRouter(prefix='/user', tags=['user'])
 @router.post('/')
 async def user_create(user_info: UserCreate,
                       db: Session = Depends(get_db)):
+    logging.info('POST /user/')
+
     # Check authorization first!
     if not await authorization.read_authorization(name=user_info.authorization, db=db):
+        logging.debug('No such authorization.')
         raise HTTPException(status_code=404, detail='No such authorization.')
 
     # If authorization exists, create user
     try:
-        await create_user(github_id=str(user_info.github_id),
-                          email=user_info.email,
-                          name=user_info.name,
-                          authorization_name=user_info.authorization,
-                          refresh_token=None,
-                          thumbnail_url=user_info.thumbnail_url,
-                          db=db)
+        created_user = await create_user(github_id=str(user_info.github_id),
+                                         email=user_info.email,
+                                         name=user_info.name,
+                                         authorization_name=user_info.authorization,
+                                         refresh_token=None,
+                                         thumbnail_url=user_info.thumbnail_url,
+                                         db=db)
+        logging.debug(f'user created: {created_user}')
 
         user = await read_user(db=db, email=user_info.email)
+        logging.debug(f'user: {user}')
     except sqlalchemy.exc.IntegrityError as e:
+        logging.warning(f'IntegrityError: {e}')
         raise HTTPException(detail=e.args[0].split('\"')[1], status_code=400)
 
     # And then, Issue access_token and refresh_token.
@@ -50,13 +57,14 @@ async def user_create(user_info: UserCreate,
     refresh_token = issue_token(user_info=user, delta=timedelta(days=14))
 
     # And then, Update user info with `refresh_token`.
-    await update_user(db=db,
-                      user_id=str(user['user_id']),
-                      email=user['email'],
-                      name=user['name'],
-                      authorization_name=user['authorization'],
-                      thumbnail_url=user['thumbnail_url'],
-                      refresh_token=refresh_token)
+    updated_user = await update_user(db=db,
+                                     user_id=str(user['user_id']),
+                                     email=user['email'],
+                                     name=user['name'],
+                                     authorization_name=user['authorization'],
+                                     thumbnail_url=user['thumbnail_url'],
+                                     refresh_token=refresh_token)
+    logging.debug(f'updated user: {updated_user}')
 
     return {
         'success': True,
@@ -77,19 +85,16 @@ async def user_read(user_id: str,
     The tokens are just needed to be valid.
     Don't check who's token.
     """
+    logging.info('GET /user/')
     if isinstance(token_payload, RefreshTokenExpired) or isinstance(token_payload, AccessTokenExpired):
+        logging.debug('One of tokens is expired.')
         return JSONResponse(content={
             'success': False,
             'detail': token_payload.detail
         }, status_code=token_payload.status_code)
 
-    # Check if client is `admin` or client itself.
-    auth = token_payload['authorization']
-    client_id = token_payload['user_id']
-    if auth != 'admin' or client_id != user_id:
-        raise HTTPException(detail='Not enough authorization to do this.', status_code=status.HTTP_401_UNAUTHORIZED)
-
     result = await read_user(user_id=user_id, db=db)
+    logging.debug(f'user: {result}')
 
     return {
         'success': True,
@@ -106,7 +111,9 @@ async def get_all_users(token_payload: dict = Depends(check_auth_using_token),
     """
     Only `admin` authorization can get this endpoint.
     """
+    logging.info('GET /user/all')
     if isinstance(token_payload, RefreshTokenExpired) or isinstance(token_payload, AccessTokenExpired):
+        logging.debug('One of tokens is expired.')
         return JSONResponse(content={
             'success': False,
             'detail': token_payload.detail
@@ -114,9 +121,11 @@ async def get_all_users(token_payload: dict = Depends(check_auth_using_token),
 
     auth = token_payload['authorization']
     if auth != 'admin':
+        logging.debug('this user has admin authorization.')
         raise HTTPException(detail='Not enough authorization to do this.', status_code=status.HTTP_401_UNAUTHORIZED)
 
     users = await read_users(db)
+    logging.debug(f'users: {users}')
     return {
         'success': True,
         'users': users
@@ -136,7 +145,9 @@ async def update_user_info(user_info: UserUpdate,
     Put user information you want to update on **request body**.
     Use `user_id`.
     """
+    logging.info('PATCH /user/')
     if isinstance(token_payload, RefreshTokenExpired) or isinstance(token_payload, AccessTokenExpired):
+        logging.debug('One of tokens is expired.')
         return JSONResponse(content={
             'success': False,
             'detail': token_payload.detail
@@ -146,10 +157,12 @@ async def update_user_info(user_info: UserUpdate,
     auth = token_payload['authorization']
     client_user_id = token_payload['user_id']
     if auth != 'admin' or user_id != client_user_id:
+        logging.debug('client hasn\'t admin authorization or user_id is not correct.')
         raise HTTPException(detail='No authorization to do this.', status_code=status.HTTP_401_UNAUTHORIZED)
 
     # Check authorization first.
     if not await read_authorization(user_info.authorization, db):
+        logging.debug('No such authorization.')
         raise HTTPException(status_code=404, detail='No such authorization.')
 
     # If authorization exists, Fix user information.
@@ -161,6 +174,7 @@ async def update_user_info(user_info: UserUpdate,
                              refresh_token=user_info.refresh_token)
 
     if not rows:
+        logging.debug('Not updated.')
         raise HTTPException(detail='Not updated.', status_code=403)
 
     return {
@@ -174,7 +188,9 @@ async def update_user_info(user_info: UserUpdate,
 async def remove_user(user_id: str,
                       token_payload: dict = Depends(check_auth_using_token),
                       db: Session = Depends(get_db)):
+    logging.info('DELETE /user/')
     if isinstance(token_payload, RefreshTokenExpired) or isinstance(token_payload, AccessTokenExpired):
+        logging.debug('One of tokens is expired.')
         return JSONResponse(content={
             'success': False,
             'detail': token_payload.detail
@@ -183,11 +199,14 @@ async def remove_user(user_id: str,
     auth = token_payload['authorization']
     client_user_id = token_payload['user_id']
     if auth != 'admin' or user_id != client_user_id:
+        logging.debug('No authorization to do this.')
         raise HTTPException(detail='No authorization to do this.', status_code=status.HTTP_401_UNAUTHORIZED)
 
     rows = await delete_user(user_id=user_id, db=db)
+    logging.debug(f'deleted count: {rows}')
 
     if not rows:
+        logging.debug('Not deleted.')
         raise HTTPException(detail='Not deleted.', status_code=status.HTTP_404_NOT_FOUND)
 
     return {

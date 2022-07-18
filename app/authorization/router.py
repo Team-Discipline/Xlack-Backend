@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
@@ -11,8 +13,10 @@ router = APIRouter(prefix='/authorization', tags=['authorization'])
 
 @router.post('/')
 async def create_auth(name: str = Query(max_length=25), db: Session = Depends(get_db)):
+    logging.info('POST /authorization/')
     auth = await read_authorization(name, db)
     if auth:
+        logging.debug(f'Authorization Already Exists: {auth.name}')
         return {
             'success': True,
             'message': 'Already exists.',
@@ -20,6 +24,7 @@ async def create_auth(name: str = Query(max_length=25), db: Session = Depends(ge
         }
     else:
         auth = await create_authorization(name, db)
+        logging.debug(f'Authorization Successfully Created: {auth.name}')
         return {
             'success': True,
             'message': 'Successfully authorization created.',
@@ -29,6 +34,7 @@ async def create_auth(name: str = Query(max_length=25), db: Session = Depends(ge
 
 @router.get('/')
 async def get_auth(name: str, db: Session = Depends(get_db)):
+    logging.info('GET /authorization/')
     auth = await read_authorization(name, db)
     return {
         'success': True,
@@ -41,6 +47,7 @@ async def get_auth(name: str, db: Session = Depends(get_db)):
 
 @router.get('/all')
 async def get_all_auth(db: Session = Depends(get_db)):
+    logging.info('GET /authorization/all')
     auths = await read_authorizations(db)
     return {
         'success': True,
@@ -55,6 +62,7 @@ async def get_all_auth(db: Session = Depends(get_db)):
 async def update_auth(old_name: str = Query(max_length=25),
                       new_name: str = Query(max_length=25),
                       db: Session = Depends(get_db)):
+    logging.info('PATCH /authorization/')
     auth = await update_authorization(old_name=old_name, new_name=new_name, db=db)
     return {
         'success': True,
@@ -68,6 +76,7 @@ async def update_auth(old_name: str = Query(max_length=25),
 @router.delete('/')
 async def delete_auth(name: str,
                       db: Session = Depends(get_db)):
+    logging.info('DELETE /authorization/')
     rows = await delete_authorization(name, db)
     return {
         'success': True,

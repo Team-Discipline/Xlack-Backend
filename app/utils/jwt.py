@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timedelta, timezone
 
 from fastapi import Header, HTTPException
@@ -16,11 +17,13 @@ def issue_token(user_info: dict, delta: timedelta):
     :param delta:
     :return:
     """
+    logging.debug('in issue_token (jwt.py)')
     payload = user_info.copy()
 
     payload.update({'iat': datetime.now(tz=timezone.utc), 'exp': datetime.now(tz=timezone.utc) + delta})
 
     jwt = encode(payload=payload, key='secret_key', algorithm='HS256')
+    logging.debug(f'jwt: {jwt}')
 
     return jwt
 
@@ -32,7 +35,9 @@ def extract_payload_from_token(token: str):
     :param token:
     :return:
     """
+    logging.debug('in issue_token (jwt.py)')
     payload = decode(jwt=token, key='secret_key', algorithms=['HS256'])
+    logging.debug(f'payload: {payload}')
 
     return payload
 
@@ -40,13 +45,16 @@ def extract_payload_from_token(token: str):
 # TODO: Refactoring.
 # Dependency
 def check_auth_using_token(access_token: str = Header(...), refresh_token: str = Header(...)):
+    logging.debug('in issue_token (jwt.py)')
     # Check `refresh_token` first.
     try:
         payload = extract_payload_from_token(refresh_token)
+        logging.debug(f'refresh_token payload: {payload}')
 
         # Check `access_token` second.
         try:
             payload = extract_payload_from_token(access_token)
+            logging.debug(f'access_token payload: {payload}')
             return payload
         # Unacceptable error.
         except InvalidAlgorithmError as e:

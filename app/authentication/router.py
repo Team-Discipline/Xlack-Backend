@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 
 from fastapi import APIRouter, Request, Query, Depends, HTTPException
@@ -21,11 +22,12 @@ async def login_github():
 
     :return:
     """
+    logging.info('GET /authentication/github_login')
 
     client_id = os.getenv('GITHUB_CLIENT_ID')
     scope = 'read:user'
     url = f'https://github.com/login/oauth/authorize?client_id={client_id}&scope={scope}'
-    print(f'url: {url}')
+    logging.debug(f'url: {url}')
     return RedirectResponse(url)
 
 
@@ -36,12 +38,12 @@ async def redirect_github(request: Request, code: str):
 
     :return:
     """
-
-    print(f'params: {request.query_params}')
-    print(f'code: {code}')
+    logging.info('GET /authentication/redirect/github')
+    logging.debug(f'params: {request.query_params}')
+    logging.debug(f'code: {code}')
     res = exchange_code_for_access_token(code)
 
-    print(f'res: {res.content}')
+    logging.debug(f'res: {res.content}')
 
     content = str(res.content)
 
@@ -77,8 +79,9 @@ async def get_user_info(github_access_token: str = Query(
     :param github_access_token:
     :return:
     """
-
+    logging.info('GET /authentication/user_info/github')
     res = get_user_data_from_github(github_access_token)
+    logging.debug(f'responses from github: {res}')
     return {
         'success': True,
         'message': 'Successfully get user information from github.',
@@ -88,10 +91,12 @@ async def get_user_info(github_access_token: str = Query(
 
 @router.get('/revoke_token/{user_id}')
 async def revoke_token(user_id: str, db: Session = Depends(get_db)):
+    logging.info('GET /authentication/revoke_token/{user_id}')
     user_info = await read_user(db, user_id=user_id)
 
     # Check `user_id` is valid first.
     if user_info is None:
+        logging.info('No such user')
         raise HTTPException(detail='No such user', status_code=404)
 
     try:
@@ -101,9 +106,11 @@ async def revoke_token(user_id: str, db: Session = Depends(get_db)):
                                  authorization_name=user_info.authorization,
                                  thumbnail_url=user_info.thumbnail_url)
         if not rows:
-            raise HTTPException(detail='[Serious] Not updated!', status_code=404)
+            logging.warning('Not updated!')
+            raise HTTPException(detail='Not updated!', status_code=404)
 
     except Exception as e:
+        logging.warning(f'Other Exception: {e.__str__()}')
         raise HTTPException(detail=e.__str__(), status_code=400)
 
     return {
