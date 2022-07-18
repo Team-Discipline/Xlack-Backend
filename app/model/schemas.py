@@ -85,6 +85,9 @@ class Channel(BaseModel):
     channel_id: int
     created_at: datetime
 
+    class ChannelMember:
+        name: str
+
 
 class Chat(BaseModel):
     uuid: str
