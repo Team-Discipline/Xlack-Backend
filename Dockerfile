@@ -5,7 +5,6 @@ WORKDIR app
 COPY . /app
 
 RUN pip install -r requirements.txt
-RUN ls -hal /app
 
 EXPOSE 10131
 
