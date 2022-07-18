@@ -39,12 +39,13 @@ async def user_create(user_info: UserCreate,
                                          thumbnail_url=user_info.thumbnail_url,
                                          db=db)
         logging.debug(f'user created: {created_user}')
-
-        user = await read_user(db=db, email=user_info.email)
-        logging.debug(f'user: {user}')
     except sqlalchemy.exc.IntegrityError as e:
         logging.warning(f'IntegrityError: {e}')
-        raise HTTPException(detail=e.args[0].split('\"')[1], status_code=400)
+        return FailureResponse(message=e.args[0].split('\"')[1], status_code=400)
+
+    user = await read_user(db=db, user_id=created_user.user_id)
+    print(f'user: {user}')
+    logging.debug(f'user: {user}')
 
     # And then, Issue access_token and refresh_token.
     user = {
@@ -68,13 +69,10 @@ async def user_create(user_info: UserCreate,
                                      refresh_token=refresh_token)
     logging.debug(f'updated user: {updated_user}')
 
-    return {
-        'success': True,
-        'message': 'Successfully created user.',
-        'user': await read_user(db=db, email=user_info.email),
-        'access_token': access_token,
-        'refresh_token': refresh_token
-    }
+    return SuccessResponse(message='Successfully created user.',
+                           user=updated_user.to_dict(),
+                           access_token=access_token,
+                           refresh_token=refresh_token)
 
 
 @router.get('/')
@@ -98,13 +96,10 @@ async def user_read(user_id: str,
     result = await read_user(user_id=user_id, db=db)
     logging.debug(f'user: {result}')
 
-    return {
-        'success': True,
-        'user': result
-    } if result is not None else JSONResponse(content={
-        'success': False,
-        'message': 'No such user.'
-    }, status_code=404)
+    if result is not None:
+        return SuccessResponse(user=result)
+    else:
+        return FailureResponse(message='No such user.', status_code=status.HTTP_404_NOT_FOUND)
 
 
 @router.get('/all')
@@ -128,14 +123,11 @@ async def get_all_users(token_payload: dict = Depends(check_auth_using_token),
 
     users = await read_users(db)
     logging.debug(f'users: {users}')
-    return {
-        'success': True,
-        'users': users
-    } if len(users) != 0 else JSONResponse(content={
-        'success': False,
-        'message': 'No users.'
-    }, status_code=404)
 
+    if users is not None:
+        return SuccessResponse(user=users)
+    else:
+        return FailureResponse(message='No users.', status_code=status.HTTP_404_NOT_FOUND)
 
 @router.patch('/')
 async def update_user_info(user_info: UserUpdate,
@@ -177,13 +169,9 @@ async def update_user_info(user_info: UserUpdate,
 
     if not rows:
         logging.debug('Not updated.')
-        raise HTTPException(detail='Not updated.', status_code=403)
-
-    return {
-        'success': True,
-        'message': 'Successfully updated.',
-        'user': await read_user(db=db, user_id=user_id)
-    }
+        return FailureResponse(message='Not updated.', status_code=status.HTTP_403_FORBIDDEN)
+    else:
+        return SuccessResponse(message='Successfully updated.', user=await read_user(db=db, user_id=user_id))
 
 
 @router.delete('/')
@@ -193,26 +181,19 @@ async def remove_user(user_id: str,
     logging.info('DELETE /user/')
     if isinstance(token_payload, RefreshTokenExpired) or isinstance(token_payload, AccessTokenExpired):
         logging.debug('One of tokens is expired.')
-        return JSONResponse(content={
-            'success': False,
-            'detail': token_payload.detail
-        }, status_code=token_payload.status_code)
+        return FailureResponse(message=token_payload.detail, status_code=token_payload.status_code)
 
     auth = token_payload['authorization']
     client_user_id = token_payload['user_id']
     if auth != 'admin' or user_id != client_user_id:
         logging.debug('No authorization to do this.')
-        raise HTTPException(detail='No authorization to do this.', status_code=status.HTTP_401_UNAUTHORIZED)
+        return FailureResponse(message='No authorization to do this.', status_code=status.HTTP_401_UNAUTHORIZED)
 
     rows = await delete_user(user_id=user_id, db=db)
     logging.debug(f'deleted count: {rows}')
 
     if not rows:
         logging.debug('Not deleted.')
-        raise HTTPException(detail='Not deleted.', status_code=status.HTTP_404_NOT_FOUND)
+        return FailureResponse(message='Not deleted.', status_code=status.HTTP_404_NOT_FOUND)
 
-    return {
-        'success': True,
-        'message': 'Successfully deleted.',
-        'count': rows
-    }
+    return SuccessResponse(message='Successfully deleted.', count=rows)

@@ -37,6 +37,9 @@ async def channel_create(channel: Channel, db: Session = Depends(get_db)):
         'channel': db_channel
     }
 
+    return SuccessResponse(channel=created.to_dict(),
+                           message='Successfully created channel',
+                           status_code=status.HTTP_201_CREATED)
 
 @router.get('/', response_model=Channel)
 async def channel_read_by_name(channel_name: str, db: Session = Depends(get_db)):
@@ -48,13 +51,14 @@ async def channel_read_by_name(channel_name: str, db: Session = Depends(get_db))
     return {'read_channel': True,
             'channel': channels}
 
+    return SuccessResponse(channel=channel.to_dict())
 
 @router.get('/', response_model=Channel)
 async def channel_read(db: Session = Depends(get_db)):
     logging.info('GET /channel/')
     all_channel = await read_channels(db)
     logging.debug(f'all channels: {all_channel}')
-    return {'all_channel': all_channel}
+    return SuccessResponse(channels=[channel.to_dict() for channel in all_channel])
 
 
 @router.patch('/', response_model=Channel)
@@ -62,13 +66,9 @@ async def channel_update(new_channel_name: str, old_channel_name: str, db: Sessi
     logging.info('PATCH /channel/')
     channel_updated = await update_channel(db, new_channel_name=new_channel_name, old_channel_name=old_channel_name)
     logging.debug(f'updated channel name: {channel_updated}')
-    if new_channel_name != str:
-        raise HTTPException(status_code=401, detail='new_channel_name type error, use string')
-    # if old_channel name is not in db
-    if old_channel_name:
-        raise HTTPException(status_code=404, detail='old_channel_name not found')
-    return {'channel updated': True,
-            'channel': channel_updated}
+
+    return SuccessResponse(message='Successfully updated channel name.',
+                           updated_channel=channel_updated.to_dict())
 
 
 @router.delete('/', response_model=Channel)

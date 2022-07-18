@@ -52,21 +52,12 @@ async def redirect_github(request: Request, code: str):
     # Check error message.
     # I know it's really messy way to deal with, But that's my best.
     first_word = content.split('&')[0].split('=')[0]
-
     if first_word == 'b\'error':
-        return {
-            'success': False,
-            'message': 'Failed to get access token.',
-            'detail': content.split('&')[1].split('=')[1]
-        }
+        return FailureResponse(message=content.split('&')[1].split('=')[1])
 
     access_token = content.split('&')[0].split('=')[1]
 
-    return {
-        'success': True,
-        'message': 'Successfully get access token from github.',
-        'access_token': access_token
-    }
+    return SuccessResponse(message='Successfully get access token from github.', access_token=access_token)
 
 
 @router.get('/user_info/github')
@@ -86,11 +77,8 @@ async def get_user_info(github_access_token: str = Query(
     logging.info('GET /authentication/user_info/github')
     res = get_user_data_from_github(github_access_token)
     logging.debug(f'responses from github: {res}')
-    return {
-        'success': True,
-        'message': 'Successfully get user information from github.',
-        'github_info': json.loads(res.content)
-    }
+    return SuccessResponse(message='Successfully get user information from github.',
+                           github_info=json.loads(res.content))
 
 
 @router.get('/revoke_token/{user_id}')
@@ -101,7 +89,7 @@ async def revoke_token(user_id: str, db: Session = Depends(get_db)):
     # Check `user_id` is valid first.
     if user_info is None:
         logging.info('No such user')
-        raise HTTPException(detail='No such user', status_code=404)
+        return FailureResponse(message='No such user', status_code=status.HTTP_404_NOT_FOUND)
 
     try:
         rows = await update_user(db=db, user_id=user_id,
@@ -113,11 +101,4 @@ async def revoke_token(user_id: str, db: Session = Depends(get_db)):
             logging.warning('Not updated!')
             raise HTTPException(detail='Not updated!', status_code=404)
 
-    except Exception as e:
-        logging.warning(f'Other Exception: {e.__str__()}')
-        raise HTTPException(detail=e.__str__(), status_code=400)
-
-    return {
-        'success': True,
-        'message': 'Successfully revoked refresh token.'
-    }
+    return SuccessResponse(message='Successfully revoked refresh token.')

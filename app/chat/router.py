@@ -20,14 +20,8 @@ async def chat_create(chat: Chat, db: Session = Depends(get_db)):
     db_chat = await create_chat(db, chat_id=chat.chat_id, chat_content=chat.chat_content,
                                 chatter=chat.chatter_name)
     logging.debug(f'chat: {chat}')
-    if db_chat:
-        raise HTTPException(status_code=400, detail='chat_id has been used')
-    if chat.chat_content is None:
-        chat.chat_content = ' '
-    return {
-        'success': True,
-        'chat': db_chat
-    }
+
+    return SuccessResponse(message='Successfully Created Chat', chat=db_chat.to_dict())
 
 
 @router.get('/', response_model=Chat)
@@ -40,14 +34,15 @@ async def show_chat_by_id(chat: Chat, chat_id: int, db: Session = Depends(get_db
         return {'success': True,
                 'chat': chats}
 
+    return SuccessResponse(chat=chat.to_dict())
 
 @router.get('/{every}', response_model=Chat)
 async def show_chat_all(db: Session = Depends(get_db)):
     logging.info('GET /chat/all')
     all_chat = await read_chats(db)
     logging.debug(f'all chats: {all_chat}')
-    return {'success': True,
-            'all_chat': all_chat}
+    return SuccessResponse(chats=[chat.to_dict() for chat in all_chat])
+
 
 
 @router.patch('/', response_model=Chat)
@@ -55,11 +50,8 @@ async def chat_update(new_chat_content: str, old_chat_content: str, db: Session 
     logging.info('PATCH /channel/')
     updated_chat = await update_chat(db, new_chat_content=new_chat_content, old_chat_content=old_chat_content)
     logging.debug(f'updated chat: {updated_chat}')
-    if old_chat_content:
-        raise HTTPException(status_code=404, detail='chat_content not found')
-    return {'success': True,
-            'updated_chat': updated_chat}
 
+    return SuccessResponse(message='Successfully edited chat.', updated_chat=updated_chat.to_dict())
 
 @router.delete('/', response_model=Chat)
 async def chat_delete(chat_id: int, db: Session = Depends(get_db)):
