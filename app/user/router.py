@@ -48,7 +48,7 @@ async def user_create(user_info: UserCreate,
     logging.debug(f'user: {user}')
 
     # And then, Issue access_token and refresh_token.
-    user = {
+    user_dict = {
         'user_id': user.user_id,
         'email': user.email,
         'name': user.name,
@@ -56,17 +56,18 @@ async def user_create(user_info: UserCreate,
         'created_at': str(user.created_at),
         'thumbnail_url': user.thumbnail_url
     }  # This code is inevitable to convert to `dict` object. Fucking `datetime` is not json parsable.
-    access_token = issue_token(user_info=user, delta=timedelta(hours=1))
-    refresh_token = issue_token(user_info=user, delta=timedelta(days=14))
+    access_token = issue_token(user_info=user_dict, delta=timedelta(hours=1))
+    refresh_token = issue_token(user_info=user_dict, delta=timedelta(days=14))
 
     # And then, Update user info with `refresh_token`.
-    updated_user = await update_user(db=db,
-                                     user_id=str(user['user_id']),
-                                     email=user['email'],
-                                     name=user['name'],
-                                     authorization_name=user['authorization'],
-                                     thumbnail_url=user['thumbnail_url'],
-                                     refresh_token=refresh_token)
+    await update_user(db=db,
+                      user_id=user_dict['user_id'],
+                      email=user_dict['email'],
+                      name=user_dict['name'],
+                      authorization_name=user_dict['authorization'],
+                      thumbnail_url=user_dict['thumbnail_url'],
+                      refresh_token=refresh_token)
+    updated_user = await read_user(db=db, user_id=user_dict['user_id'])
     logging.debug(f'updated user: {updated_user}')
 
     return SuccessResponse(message='Successfully created user.',
