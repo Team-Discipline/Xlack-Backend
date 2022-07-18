@@ -1,11 +1,12 @@
 import uuid
 
 from sqlalchemy import Column, String, Integer, TIMESTAMP, func, ForeignKey
+from sqlalchemy_serializer import SerializerMixin
 
 from .database import Base
 
 
-class User(Base):
+class User(Base, SerializerMixin):
     __tablename__ = 'users'
 
     user_id = Column(Integer(), autoincrement=True, unique=True, primary_key=True, nullable=False)
@@ -26,7 +27,7 @@ class User(Base):
     thumbnail_url = Column(String(500), nullable=True)
 
 
-class Authorization(Base):
+class Authorization(Base, SerializerMixin):
     __tablename__ = 'authorizations'
 
     uuid = Column(String(50), nullable=False, primary_key=True, default=uuid.uuid4())
@@ -34,16 +35,16 @@ class Authorization(Base):
     created_at = Column(TIMESTAMP(), nullable=False, default=func.now())
 
 
-class Channel(Base):
+class Channel(Base, SerializerMixin):
     __tablename__ = 'channels'
 
     uuid = Column(String(50), unique=True, nullable=False, primary_key=True)
-    channel_id = Column(Integer(), autoincrement=True, unique=True)
+    channel_id = Column(Integer(), autoincrement=True, unique=True, nullable=False)
     channel_name = Column(String(50))
     created_at = Column(TIMESTAMP(), default=func.now())
 
 
-class Chat(Base):
+class Chat(Base, SerializerMixin):
     __tablename__ = 'chats'
 
     uuid = Column(String(50), unique=True, nullable=False, primary_key=True)
