@@ -14,8 +14,7 @@ async def create_user(db: Session,
                       email: str,
                       name: str,
                       thumbnail_url: str | None = None,
-                      authorization_name: str = 'member',
-                      refresh_token: str | None = None) -> models.User:
+                      authorization_name: str = 'member') -> models.User:
     """
     Create user into database.
 
@@ -24,7 +23,6 @@ async def create_user(db: Session,
     :param email: email address.
     :param name: full name.
     :param authorization_name: name which is in `Authorization` in database.
-    :param refresh_token: Refresh token.
     :param db:
     :return:
     """
@@ -33,8 +31,7 @@ async def create_user(db: Session,
                        email=email,
                        name=name,
                        authorization=authorization_name,
-                       thumbnail_url=thumbnail_url,
-                       refresh_token=refresh_token)
+                       thumbnail_url=thumbnail_url)
     db.add(user)
     db.commit()
     db.refresh(user)
@@ -51,12 +48,7 @@ async def read_user(db: Session,
 
 
 async def read_users(db: Session) -> [models.User]:
-    return db.query(models.User.user_id,
-                    models.User.email,
-                    models.User.name,
-                    models.User.authorization,
-                    models.User.created_at,
-                    models.User.thumbnail_url).all()
+    return db.query(models.User).all()
 
 
 async def update_user(db: Session,
@@ -64,7 +56,6 @@ async def update_user(db: Session,
                       email: str,
                       name: str,
                       thumbnail_url: str | None = None,
-                      refresh_token: str | None = None,
                       authorization_name: str = 'guest') -> models.User:
     """
     Identify user only with **user_id**!!!
@@ -75,7 +66,6 @@ async def update_user(db: Session,
     :param user_id: Using when identifying user.
     :param email: Field to update.
     :param name: Field to update.
-    :param refresh_token: Field to update. Not required.
     :param authorization_name: Field to update. Not required.
     :param db:
     :return:
@@ -87,7 +77,6 @@ async def update_user(db: Session,
         .update({'email': email,
                  'name': name,
                  'authorization': authorization_name,
-                 'refresh_token': refresh_token,
                  'thumbnail_url': thumbnail_url})
     db.commit()
 

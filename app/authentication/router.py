@@ -97,11 +97,7 @@ async def revoke_token(user_id: str, db: Session = Depends(get_db)):
         logging.info('No such user')
         return FailureResponse(message='No such user', status_code=status.HTTP_404_NOT_FOUND)
 
-    rows = await update_user(db=db, user_id=user_id,
-                             email=user_info.email,
-                             name=user_info.name,
-                             authorization_name=user_info.authorization,
-                             thumbnail_url=user_info.thumbnail_url)
+    rows = await update_user_tokens(db=db, user_id=user_id, new_refresh_token=None)
     if not rows:
         logging.warning('Not updated!')
         return FailureResponse(message='Not updated!', status_code=status.HTTP_404_NOT_FOUND)

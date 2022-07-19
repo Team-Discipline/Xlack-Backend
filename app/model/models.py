@@ -22,9 +22,15 @@ class User(Base, SerializerMixin):
 
     authorization = Column(String(25), ForeignKey('authorizations.name'))
 
-    refresh_token = Column(String(1000), unique=True, nullable=True)
-
     thumbnail_url = Column(String(500), nullable=True)
+
+
+class UserToken(Base, SerializerMixin):
+    __tablename__ = 'user_tokens'
+
+    uuid = Column(String(50), unique=True, nullable=False, primary_key=True)
+    user_id = Column(Integer(), ForeignKey('users.user_id'), nullable=False, unique=True)
+    refresh_token = Column(String(1000), unique=True, nullable=True)
 
 
 class Authorization(Base, SerializerMixin):

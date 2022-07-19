@@ -10,9 +10,10 @@ from sqlalchemy.orm import Session
 from ..errors.jwt_error import RefreshTokenExpired, AccessTokenExpired
 from ..model.crud import authorization
 from ..model.crud.authorization import read_authorization
+from ..model.crud.user_tokens import create_user_tokens, update_user_tokens, delete_user_tokens
 from ..model.crud.user import read_users, read_user, update_user, delete_user, create_user
 from ..model.database import get_db
-from ..model.schemas import UserCreate, UserUpdate
+from ..model.schemas import UserCreate, UserInformation
 from ..utils.jwt import issue_token, check_auth_using_token
 from ..utils.responses import FailureResponse, SuccessResponse
 
@@ -60,15 +61,7 @@ async def user_create(user_info: UserCreate,
     refresh_token = issue_token(user_info=user_dict, delta=timedelta(days=14))
 
     # And then, Update user info with `refresh_token`.
-    await update_user(db=db,
-                      user_id=user_dict['user_id'],
-                      email=user_dict['email'],
-                      name=user_dict['name'],
-                      authorization_name=user_dict['authorization'],
-                      thumbnail_url=user_dict['thumbnail_url'],
-                      refresh_token=refresh_token)
-    updated_user = await read_user(db=db, user_id=user_dict['user_id'])
-    logging.debug(f'updated user: {updated_user}')
+    await create_user_tokens(db=db, user_id=created_user.user_id, refresh_token=refresh_token)
 
     return SuccessResponse(message='Successfully created user.',
                            user=updated_user.to_dict(),
@@ -190,8 +183,24 @@ async def remove_user(user_id: int,
         return FailureResponse(message=token_payload.detail, status_code=token_payload.status_code)
 
     auth = token_payload['authorization']
-    client_user_id = token_payload['user_id']
-    if auth != 'admin' or user_id != client_user_id:
+    client_user_id = int(token_payload['user_id'])
+    logging.debug(f'auth: {auth}')
+    logging.debug(f'client_user_id: {client_user_id}')
+    logging.debug(f'user_id: {user_id}')
+
+    is_admin = auth == 'admin'
+    is_same_user = user_id == client_user_id
+    if is_admin or is_same_user:
+        await delete_user_tokens(user_id=user_id, db=db)
+        rows = await delete_user(user_id=user_id, db=db)
+        logging.debug(f'deleted count: {rows}')
+
+        if not rows:
+            logging.debug('Not deleted.')
+            return FailureResponse(message='Not deleted.', status_code=status.HTTP_404_NOT_FOUND)
+
+        return SuccessResponse(message='Successfully deleted.', count=rows)
+    else:
         logging.debug('No authorization to do this.')
         return FailureResponse(message='No authorization to do this.', status_code=status.HTTP_401_UNAUTHORIZED)
 

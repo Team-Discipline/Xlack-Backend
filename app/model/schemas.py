@@ -130,3 +130,30 @@ class Chat(Base, SerializerMixin):
     created_at = Column(TIMESTAMP(), default=func.now(), nullable=False)
 
 """
+
+
+class UserTokenBase(BaseModel):
+    user_id: int
+
+
+class UserTokenCreate(UserTokenBase):
+    refresh_token: str | None
+
+
+class UserToken(UserTokenCreate):
+    uuid: str
+
+    class Config:
+        orm_mode = True
+
+
+"""
+
+class UserToken(Base, SerializerMixin):
+    __tablename__ = 'user_tokens'
+
+    uuid = Column(String(50), unique=True, nullable=False, primary_key=True)
+    user_id = Column(Integer(), ForeignKey('users.user_id'), nullable=True, unique=True)
+    refresh_token = Column(String(1000), unique=True, nullable=False)
+
+"""
