@@ -12,6 +12,7 @@ from starlette import status
 from starlette.responses import JSONResponse
 
 from ..errors.jwt_error import AccessTokenExpired
+from ..model.crud.user_tokens import update_user_tokens
 from ..model.crud.user import update_user, read_user
 from ..model.database import get_db
 from ..utils.github_auth import exchange_code_for_access_token, get_user_data_from_github
@@ -88,7 +89,7 @@ async def get_user_info(github_access_token: str = Query(
 
 
 @router.post('/revoke_token/{user_id}')
-async def revoke_token(user_id: str, db: Session = Depends(get_db)):
+async def revoke_token(user_id: int, db: Session = Depends(get_db)):
     logging.info('GET /authentication/revoke_token/{user_id}')
     user_info = await read_user(db, user_id=user_id)
 
@@ -108,17 +109,17 @@ async def revoke_token(user_id: str, db: Session = Depends(get_db)):
 @router.post('/update/access_token')
 async def update_access_token(access_token: str = Body(...),
                               db: Session = Depends(get_db)):
-    return await __issue_new_token(timedelta(hours=1), access_token, db)
+    return await __issue_new_token(token=access_token, is_access_token=True, db=db)
 
 
 @router.post('/update/refresh_token')
 async def update_refresh_token(refresh_token: str = Body(...),
                                db: Session = Depends(get_db)):
-    return await __issue_new_token(timedelta(days=14), refresh_token, db)
+    return await __issue_new_token(token=refresh_token, is_access_token=False, db=db)
 
 
-async def __issue_new_token(time: timedelta,
-                            token: str = Body(...),
+async def __issue_new_token(token: str = Body(...),
+                            is_access_token: bool = True,
                             db: Session = Depends(get_db)):
     """
     Helper function that helps common logic
@@ -127,10 +128,8 @@ async def __issue_new_token(time: timedelta,
     # Check whether access token is expired first.
     try:
         decode(token, key='secret_key', algorithms=['HS256'])
-        return JSONResponse(content={
-            'success': False,
-            'message': 'You can this endpoint when only access token is expired.'
-        }, status_code=status.HTTP_403_FORBIDDEN)
+        return FailureResponse(message='You can this endpoint when only access token is expired.',
+                               status_code=status.HTTP_403_FORBIDDEN)
     except ExpiredSignatureError:
         pass
 
@@ -151,6 +150,10 @@ async def __issue_new_token(time: timedelta,
         'created_at': str(user.created_at),
         'thumbnail_url': user.thumbnail_url
     }  # This code is inevitable to convert to `dict` object. Fucking `datetime` is not json parsable.
-    token = issue_token(user_info=payload, delta=time)
+    token = issue_token(user_info=payload, delta=timedelta(hours=1) if is_access_token else timedelta(days=14))
 
-    return SuccessResponse(message='Successfully re-issued access token.', token=token)
+    if is_access_token:
+        return SuccessResponse(message='Successfully re-issued access token.', token=token)
+    else:  # in case refresh token
+        await update_user_tokens(db=db, user_id=user.user_id, new_refresh_token=token)
+        return SuccessResponse(message='Successfully re-issued refresh token', token=token)

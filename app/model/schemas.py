@@ -9,17 +9,12 @@ class UserBase(BaseModel):
     thumbnail_url: str | None
 
 
-class UserCreate(UserBase):
-    github_id: int
-    authorization: str
-
-
 class UserInformation(UserBase):
     authorization: str
 
 
-class UserUpdate(UserInformation):
-    refresh_token: str | None
+class UserCreate(UserInformation):
+    github_id: int
 
 
 class User(UserBase):
@@ -27,8 +22,6 @@ class User(UserBase):
     uuid: str
 
     created_at: datetime
-
-    refresh_token: str
 
     class Config:
         orm_mode = True

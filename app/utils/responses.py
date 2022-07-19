@@ -8,14 +8,16 @@ class CommonResponse(JSONResponse):
     This is case of response ins common case.
     Don't use this response directly.
     """
+    ...
 
+
+class SuccessResponse(CommonResponse):
     def __init__(self,
-                 success: bool = True,
-                 message: str = 'Success!',
                  status_code: int = 200,
+                 message: str = 'Success!',
                  **kwargs):
         self.param = {
-            'success': success,
+            'success': True,
             'message': message
         }
 
@@ -25,14 +27,13 @@ class CommonResponse(JSONResponse):
         super().__init__(content=self.param, status_code=status_code)
 
 
-class SuccessResponse(CommonResponse):
-    ...
-
-
 class FailureResponse(CommonResponse):
-    def __init__(self, status_code: int, success: bool = False, message: str = 'Success!', **kwargs):
+    def __init__(self,
+                 status_code: int,
+                 message: str = 'Failed!',
+                 **kwargs):
         self.param = {
-            'success': success,
+            'success': False,
             'message': message
         }
         self.param.update(kwargs)
