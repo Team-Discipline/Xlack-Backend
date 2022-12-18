@@ -10,7 +10,7 @@ from user_profile.serializers import UserProfileSerializer
 class UserProfileViewSet(viewsets.ModelViewSet):
     queryset = UserProfile.objects.all()
     serializer_class = UserProfileSerializer
-    http_method_names = ['get', 'post']
+    http_method_names = ['get', 'post', 'put', 'delete']
     permission_classes = [permissions.IsAuthenticated]
     lookup_field = 'user_id'
 
@@ -43,14 +43,6 @@ class UserProfileViewSet(viewsets.ModelViewSet):
 
         p = self.get_serializer(user_profile)
         return Response(p.data)
-
-
-class UserProfileUpdateDeleteViewSet(viewsets.ModelViewSet):
-    queryset = UserProfile.objects.all()
-    serializer_class = UserProfileSerializer
-    permission_classes = [permissions.IsAuthenticated]
-    http_method_names = ['put', 'delete']
-    lookup_field = 'user_id'
 
     def update(self, request, *args, **kwargs):
         """
