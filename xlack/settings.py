@@ -40,9 +40,8 @@ SESSION_COOKIE_SECURE = True
 
 # https://docs.djangoproject.com/en/4.0/ref/settings/#std-setting-CSRF_TRUSTED_ORIGINS
 CSRF_TRUSTED_ORIGINS = [
-    'http://127.0.0.1:8000',
-    'http://localhost:8000',
-    'https://*.kreimben.com'
+    'https://*.kreimben.com',
+    'https://xlack-backend.herokuapp.com'
 ]
 
 # Application definition
@@ -53,7 +52,6 @@ INSTALLED_APPS = [
     'chat_channel.apps.ChannelConfig',
     'user_profile.apps.UserProfileConfig',
     'oauth2_token.apps.Oauth2TokenConfig',
-    'workspace.apps.WorkspaceConfig',
 
     # Apps we installed.
     'rest_framework',
@@ -183,24 +181,8 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
-
-DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-AWS_S3_ACCESS_KEY_ID = os.getenv('AWS_S3_ACCESS_KEY_ID')
-AWS_S3_SECRET_ACCESS_KEY = os.getenv('AWS_S3_SECRET_ACCESS_KEY')
-AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME')
-AWS_S3_CUSTOM_DOMAIN = f"{os.getenv('AWS_S3_CUSTOM_DOMAIN')}/{AWS_STORAGE_BUCKET_NAME}"
-AWS_S3_USE_SSL = True
-AWS_DEFAULT_ACL = 'public-read'
-AWS_S3_SECURE_URLS = False
-AWS_QUERYSTRING_AUTH = False
-AWS_S3_ENDPOINT_URL = f"https://{os.getenv('AWS_S3_CUSTOM_DOMAIN')}"
-
-STATIC_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/static/"
-MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/media/"
-STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-
+STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'static/'
-MEDIA_ROOT = BASE_DIR / 'media/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field

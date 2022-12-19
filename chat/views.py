@@ -1,5 +1,4 @@
 from rest_framework import permissions, generics
-from rest_framework.generics import get_object_or_404
 from rest_framework.pagination import LimitOffsetPagination
 
 from chat.models import Chat
@@ -19,4 +18,4 @@ class ChatView(generics.ListAPIView):
 
     def get_queryset(self):
         cid = self.kwargs['channel_id']
-        return self.queryset.filter(channel_id=cid)
+        return Chat.objects.order_by('-id').filter(channel_id=cid)
